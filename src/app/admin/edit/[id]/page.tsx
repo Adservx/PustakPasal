@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { EditBookClient } from './EditBookClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function EditBookPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const supabase = await createClient()

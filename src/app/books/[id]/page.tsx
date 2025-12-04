@@ -3,6 +3,8 @@ import { BookDetailContent } from "@/components/features/BookDetailContent"
 import { notFound } from "next/navigation"
 import { mapBookData } from "@/lib/supabase/books"
 
+export const dynamic = 'force-dynamic'
+
 export default async function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const supabase = await createClient()
