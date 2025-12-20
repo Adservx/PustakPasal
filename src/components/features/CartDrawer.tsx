@@ -50,9 +50,10 @@ export function CartDrawer() {
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                        className="fixed right-0 top-0 bottom-0 h-[100dvh] w-full sm:w-[400px] md:w-[420px] bg-background/95 backdrop-blur-xl z-[10000] shadow-2xl flex flex-col border-l border-border/50"
+                        className="fixed right-0 top-0 bottom-0 h-[100dvh] w-full sm:w-[400px] md:w-[420px] bg-background z-[10000] shadow-2xl flex flex-col border-l border-border/50"
+                        style={{ backgroundColor: "hsl(var(--background))" }}
                     >
-                        <div className="p-4 sm:p-6 border-b border-border/50 bg-background">
+                        <div className="p-4 sm:p-6 border-b border-border/50">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h2 className="text-xl sm:text-2xl font-serif font-medium">Your Bag</h2>
@@ -142,7 +143,7 @@ export function CartDrawer() {
                         </div>
 
                         {items.length > 0 && (
-                            <div className="p-4 sm:p-6 border-t border-border/50 bg-background space-y-4 sm:space-y-5">
+                            <div className="p-4 sm:p-6 border-t border-border/50 space-y-4 sm:space-y-5">
                                 <div className="space-y-2 sm:space-y-3">
                                     <div className="flex justify-between text-xs sm:text-sm">
                                         <span className="text-muted-foreground">Subtotal</span>
@@ -186,7 +187,7 @@ export function CartDrawer() {
                 aria-label="Cart"
             >
                 <ShoppingCart className="h-4 w-4" />
-                {totalItems > 0 && (
+                {mounted && totalItems > 0 && (
                     <motion.span
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}

@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import nextDynamic from "next/dynamic"
 import { getBooks } from "@/lib/supabase/books-server"
 import { Book } from "@/lib/types"
+import { CollectionLoadingSkeleton } from "@/components/ui/loading-spinner"
 
 // Force dynamic rendering since we fetch from Supabase
 export const dynamic = 'force-dynamic'
@@ -23,15 +24,12 @@ const MoodGrid = nextDynamic(
 const BookShowcase = nextDynamic(
   () => import("@/components/features/BookShowcase").then(mod => ({ default: mod.BookShowcase })),
   {
-    loading: () => <BookShowcaseSkeleton />,
+    loading: () => <CollectionLoadingSkeleton />,
     ssr: true
   }
 )
 
-const Newsletter = nextDynamic(
-  () => import("@/components/features/Newsletter").then(mod => ({ default: mod.Newsletter })),
-  { ssr: true }
-)
+
 
 // Lightweight skeleton components
 function HeroSkeleton() {
@@ -56,31 +54,6 @@ function HeroSkeleton() {
   )
 }
 
-function BookShowcaseSkeleton() {
-  return (
-    <section className="py-12 sm:py-16 md:py-24 bg-secondary/30 border-y border-border/50">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-4 mb-8 sm:mb-12 md:mb-16">
-          <div className="h-[1px] flex-1 bg-border" />
-          <div className="h-4 w-32 bg-secondary/50 rounded animate-pulse" />
-          <div className="h-[1px] flex-1 bg-border" />
-        </div>
-        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 md:gap-x-8 gap-y-8 sm:gap-y-10 md:gap-y-12">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="space-y-4">
-              <div className="aspect-[2/3] bg-secondary/50 rounded-xl animate-pulse" />
-              <div className="space-y-2">
-                <div className="h-5 w-3/4 bg-secondary/50 rounded animate-pulse" />
-                <div className="h-3 w-1/2 bg-secondary/30 rounded animate-pulse" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
 // Server Component - fetches data on server
 async function getHomePageData(): Promise<Book[]> {
   try {
@@ -96,7 +69,7 @@ export default async function Home() {
   const featuredBook = books[0] || null
 
   return (
-    <div className="min-h-screen bg-background selection:bg-accent/30 overflow-hidden">
+    <div className="min-h-screen bg-background selection:bg-accent/30 overflow-x-clip">
       <Suspense fallback={<HeroSkeleton />}>
         <HeroSection featuredBook={featuredBook} />
       </Suspense>
@@ -105,13 +78,11 @@ export default async function Home() {
         <MoodGrid />
       </Suspense>
 
-      <Suspense fallback={<BookShowcaseSkeleton />}>
+      <Suspense fallback={<CollectionLoadingSkeleton />}>
         <BookShowcase books={books} />
       </Suspense>
 
-      <Suspense>
-        <Newsletter />
-      </Suspense>
+
     </div>
   )
 }

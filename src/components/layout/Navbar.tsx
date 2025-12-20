@@ -98,11 +98,14 @@ export function Navbar() {
                     }
                 `}>
                     {/* Left: Logo */}
-                    <Link href="/" className="group flex items-center gap-2 md:gap-3">
-                        <div className="h-8 w-8 md:h-10 md:w-10 rounded-xl bg-gradient-to-br from-foreground to-foreground/80 text-background flex items-center justify-center font-serif font-bold text-xl md:text-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Link href="/" className="group flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
+                        <div className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-foreground to-foreground/80 text-background flex items-center justify-center font-serif font-bold text-lg sm:text-xl md:text-2xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
                             H
                         </div>
-                        <span className="hidden sm:inline font-serif text-xl md:text-2xl font-bold tracking-tight transition-colors text-gradient">
+                        <span className="font-serif text-xs xs:text-sm sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight transition-colors text-gradient whitespace-nowrap hidden xs:inline">
+                            Hamro Pustak Pasal
+                        </span>
+                        <span className="font-serif text-xs font-bold tracking-tight transition-colors text-gradient whitespace-nowrap xs:hidden">
                             Hamro Pustak
                         </span>
                     </Link>
@@ -114,11 +117,21 @@ export function Navbar() {
 
                     {/* Right: Actions */}
                     <div className="flex items-center gap-1 md:gap-3">
+                        {/* Mobile Search Toggle */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="md:hidden h-9 w-9 rounded-full hover:bg-secondary/80 transition-colors"
+                            onClick={() => setIsSearchOpen(!isSearchOpen)}
+                        >
+                            <Search className="h-4 w-4" />
+                        </Button>
+
                         {/* Mobile Menu Toggle */}
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="lg:hidden h-10 w-10 md:h-12 md:w-12 rounded-full hover:bg-secondary/80 transition-colors"
+                            className="lg:hidden h-9 w-9 md:h-12 md:w-12 rounded-full hover:bg-secondary/80 transition-colors"
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         >
                             <Menu className="h-5 w-5 md:h-6 md:w-6" />
@@ -235,6 +248,42 @@ export function Navbar() {
                 </div>
             </motion.header>
 
+            {/* Mobile Search Overlay */}
+            <AnimatePresence>
+                {isSearchOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.2 }}
+                        className="fixed top-[70px] left-0 right-0 z-[55] md:hidden px-3 pt-2 pb-4"
+                    >
+                        <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border p-3">
+                            <div className="relative flex items-center gap-2">
+                                <Search className="absolute left-4 text-muted-foreground h-4 w-4" />
+                                <Input
+                                    type="search"
+                                    placeholder="Search books..."
+                                    className="h-11 pl-10 pr-4 bg-secondary/50 border-border rounded-xl focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-accent/50 w-full"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={handleSearch}
+                                    autoFocus
+                                />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9 rounded-full shrink-0 hover:bg-secondary"
+                                    onClick={() => setIsSearchOpen(false)}
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Mobile Menu Drawer */}
             <AnimatePresence>
                 {isMobileMenuOpen && (
@@ -259,11 +308,11 @@ export function Navbar() {
                             <div className="p-6 space-y-6">
                                 {/* Header */}
                                 <div className="flex items-center justify-between pb-4 border-b border-border">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-foreground text-background flex items-center justify-center font-serif font-bold text-2xl shadow-lg">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-8 w-8 rounded-lg bg-foreground text-background flex items-center justify-center font-serif font-bold text-xl shadow-lg">
                                             H
                                         </div>
-                                        <span className="font-serif text-2xl font-bold">Menu</span>
+                                        <span className="font-serif text-lg font-bold text-gradient">Hamro Pustak Pasal</span>
                                     </div>
                                     <Button
                                         variant="ghost"

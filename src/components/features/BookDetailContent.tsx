@@ -36,8 +36,8 @@ export function BookDetailContent({ book, relatedBooks }: { book: Book, relatedB
     const getPrice = (format: string) => book.price[format as keyof typeof book.price]
 
     return (
-        <div className="min-h-screen bg-background pb-20">
-            <div className="relative h-[60vh] md:h-[70vh] overflow-hidden bg-secondary/20">
+        <div className="min-h-screen bg-background pb-12 xs:pb-16 md:pb-20">
+            <div className="relative h-[50vh] xs:h-[55vh] sm:h-[60vh] md:h-[70vh] overflow-hidden bg-secondary/20">
                 <motion.div
                     style={{ y: y1, opacity }}
                     className="absolute inset-0 z-0"
@@ -46,8 +46,8 @@ export function BookDetailContent({ book, relatedBooks }: { book: Book, relatedB
                     <div className="w-full h-full opacity-30 bg-[url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1600&h=900&fit=crop')] bg-cover bg-center blur-sm scale-110" />
                 </motion.div>
 
-                <div className="container relative z-20 h-full flex items-center px-4 md:px-6 pt-32">
-                    <div className="grid md:grid-cols-[300px_1fr] lg:grid-cols-[400px_1fr] gap-8 md:gap-16 items-center w-full">
+                <div className="container relative z-20 h-full flex items-center px-3 xs:px-4 sm:px-5 md:px-6 pt-24 xs:pt-28 sm:pt-32">
+                    <div className="grid md:grid-cols-[280px_1fr] lg:grid-cols-[400px_1fr] gap-6 xs:gap-8 md:gap-12 lg:gap-16 items-center w-full">
                         <motion.div
                             initial={{ opacity: 0, y: 50, rotateY: -15 }}
                             animate={{ opacity: 1, y: 0, rotateY: 0 }}
@@ -76,16 +76,16 @@ export function BookDetailContent({ book, relatedBooks }: { book: Book, relatedB
                                 <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Back to Collection
                             </Link>
 
-                            <div className="space-y-4">
-                                <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                                    {book.isBestseller && <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20">Bestseller</Badge>}
-                                    {book.isNew && <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20">New Release</Badge>}
-                                    <Badge variant="outline" className="flex items-center gap-1">
-                                        <Clock className="h-3 w-3" /> {Math.floor(book.readingTime / 60)}h {book.readingTime % 60}m
+                            <div className="space-y-3 xs:space-y-4">
+                                <div className="flex flex-wrap gap-1.5 xs:gap-2 justify-center md:justify-start">
+                                    {book.isBestseller && <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20 text-[10px] xs:text-xs px-2 xs:px-2.5 py-0.5">Bestseller</Badge>}
+                                    {book.isNew && <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20 text-[10px] xs:text-xs px-2 xs:px-2.5 py-0.5">New Release</Badge>}
+                                    <Badge variant="outline" className="flex items-center gap-1 text-[10px] xs:text-xs px-2 xs:px-2.5 py-0.5">
+                                        <Clock className="h-2.5 w-2.5 xs:h-3 xs:w-3" /> {Math.floor(book.readingTime / 60)}h {book.readingTime % 60}m
                                     </Badge>
                                 </div>
-                                <h1 className="text-5xl md:text-7xl font-medium font-serif tracking-tight leading-[0.9] text-balance">{book.title}</h1>
-                                <p className="text-xl md:text-3xl text-muted-foreground font-light">
+                                <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium font-serif tracking-tight leading-[0.9] text-balance">{book.title}</h1>
+                                <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-muted-foreground font-light">
                                     by <span className="text-foreground font-medium">{book.author}</span>
                                 </p>
                             </div>
@@ -99,12 +99,12 @@ export function BookDetailContent({ book, relatedBooks }: { book: Book, relatedB
                                 <span className="text-muted-foreground font-medium">{book.rating} <span className="text-muted-foreground/50 mx-2">•</span> {book.reviewCount?.toLocaleString()} reviews</span>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-4">
-                                <Button size="lg" className="h-14 px-10 text-lg gap-2 rounded-full shadow-xl shadow-primary/10 hover:scale-105 transition-all" onClick={handleAddToCart}>
-                                    <ShoppingCart className="h-5 w-5" /> Add to Cart
+                            <div className="flex flex-col xs:flex-row gap-2.5 xs:gap-3 sm:gap-4 justify-center md:justify-start pt-3 xs:pt-4">
+                                <Button size="lg" className="h-11 xs:h-12 sm:h-14 px-6 xs:px-8 sm:px-10 text-sm xs:text-base sm:text-lg gap-1.5 xs:gap-2 rounded-full shadow-xl shadow-primary/10 hover:scale-105 transition-all" onClick={handleAddToCart}>
+                                    <ShoppingCart className="h-4 w-4 xs:h-5 xs:w-5" /> Add to Cart
                                 </Button>
-                                <Button size="lg" variant="outline" className="h-14 px-8 text-lg gap-2 rounded-full border-border/50 hover:bg-secondary/50" onClick={() => toggleWishlist(book.id)}>
-                                    <Heart className={`h-5 w-5 ${isInWishlist(book.id) ? "fill-red-500 text-red-500" : ""}`} />
+                                <Button size="lg" variant="outline" className="h-11 xs:h-12 sm:h-14 px-6 xs:px-7 sm:px-8 text-sm xs:text-base sm:text-lg gap-1.5 xs:gap-2 rounded-full border-border/50 hover:bg-secondary/50" onClick={() => toggleWishlist(book.id)}>
+                                    <Heart className={`h-4 w-4 xs:h-5 xs:w-5 ${isInWishlist(book.id) ? "fill-red-500 text-red-500" : ""}`} />
                                     {isInWishlist(book.id) ? "Saved" : "Save"}
                                 </Button>
                             </div>
@@ -113,11 +113,11 @@ export function BookDetailContent({ book, relatedBooks }: { book: Book, relatedB
                 </div>
             </div>
 
-            <div className="container px-4 md:px-6 -mt-20 relative z-30">
-                <div className="grid lg:grid-cols-[1fr_400px] gap-12">
-                    <div className="space-y-12">
-                        <div className="md:hidden flex justify-center -mt-32 mb-8">
-                            <div className="relative w-48 aspect-[2/3] rounded-xl shadow-2xl overflow-hidden border-4 border-white/10">
+            <div className="container px-3 xs:px-4 sm:px-5 md:px-6 -mt-16 xs:-mt-20 relative z-30">
+                <div className="grid lg:grid-cols-[1fr_400px] gap-8 xs:gap-10 md:gap-12">
+                    <div className="space-y-8 xs:space-y-10 md:space-y-12">
+                        <div className="md:hidden flex justify-center -mt-24 xs:-mt-28 sm:-mt-32 mb-6 xs:mb-8">
+                            <div className="relative w-36 xs:w-40 sm:w-48 aspect-[2/3] rounded-xl shadow-2xl overflow-hidden border-2 xs:border-4 border-white/10">
                                 <Image
                                     src={book.coverUrl}
                                     alt={book.title}
@@ -132,13 +132,13 @@ export function BookDetailContent({ book, relatedBooks }: { book: Book, relatedB
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            className="bg-card/50 backdrop-blur-sm rounded-3xl p-8 md:p-12 shadow-sm border border-border/50"
+                            className="bg-card/50 backdrop-blur-sm rounded-2xl xs:rounded-3xl p-5 xs:p-6 sm:p-8 md:p-12 shadow-sm border border-border/50"
                         >
-                            <h2 className="text-3xl font-medium font-serif mb-6">Synopsis</h2>
-                            <p className="text-lg leading-relaxed text-muted-foreground font-light">
+                            <h2 className="text-xl xs:text-2xl sm:text-3xl font-medium font-serif mb-4 xs:mb-5 sm:mb-6">Synopsis</h2>
+                            <p className="text-sm xs:text-base sm:text-lg leading-relaxed text-muted-foreground font-light">
                                 {book.description}
                             </p>
-                            <div className="mt-8 p-8 bg-secondary/30 rounded-2xl border-l-4 border-accent italic text-xl text-muted-foreground font-serif">
+                            <div className="mt-6 xs:mt-7 sm:mt-8 p-4 xs:p-5 sm:p-6 md:p-8 bg-secondary/30 rounded-xl xs:rounded-2xl border-l-2 xs:border-l-4 border-accent italic text-base xs:text-lg sm:text-xl text-muted-foreground font-serif">
                                 "{book.excerpt}"
                             </div>
                         </motion.div>

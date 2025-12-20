@@ -11,6 +11,7 @@ import { Book } from "@/lib/types"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 export default function CartPage() {
     const { items, updateQuantity, removeItem, clearCart } = useCartStore()
@@ -38,7 +39,7 @@ export default function CartPage() {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center pt-40">
-                <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+                <LoadingSpinner size="xl" text="Loading your cart..." />
             </div>
         )
     }
@@ -71,19 +72,19 @@ export default function CartPage() {
     }
 
     return (
-        <div className="min-h-screen bg-background pt-40 pb-20">
-            <div className="container px-4 md:px-6">
-                <div className="mb-8">
-                    <Link href="/books" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4 transition-colors">
+        <div className="min-h-screen bg-background pt-24 sm:pt-32 md:pt-40 pb-20 sm:pb-24">
+            <div className="container px-3 sm:px-4 md:px-6">
+                <div className="mb-6 sm:mb-8">
+                    <Link href="/books" className="inline-flex items-center text-sm sm:text-base text-muted-foreground hover:text-foreground mb-3 sm:mb-4 transition-colors">
                         <ArrowLeft className="mr-2 h-4 w-4" /> Continue Shopping
                     </Link>
-                    <h1 className="text-4xl md:text-5xl font-serif font-bold">Shopping Cart</h1>
-                    <p className="text-muted-foreground mt-2">{items.length} {items.length === 1 ? 'item' : 'items'} in your cart</p>
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold">Shopping Cart</h1>
+                    <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">{items.length} {items.length === 1 ? 'item' : 'items'} in your cart</p>
                 </div>
 
-                <div className="grid lg:grid-cols-3 gap-8">
+                <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                     {/* Cart Items */}
-                    <div className="lg:col-span-2 space-y-4">
+                    <div className="lg:col-span-2 space-y-3 sm:space-y-4 order-2 lg:order-1">
                         {items.map((item, index) => {
                             const book = getBookForItem(item.bookId)
                             if (!book) return null
@@ -96,9 +97,9 @@ export default function CartPage() {
                                     transition={{ delay: index * 0.1 }}
                                 >
                                     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                                        <CardContent className="p-6">
-                                            <div className="flex gap-4">
-                                                <div className="relative h-32 w-24 flex-shrink-0 rounded-lg overflow-hidden bg-secondary">
+                                        <CardContent className="p-3 sm:p-4 md:p-6">
+                                            <div className="flex gap-3 sm:gap-4">
+                                                <div className="relative h-24 w-16 sm:h-28 sm:w-20 md:h-32 md:w-24 flex-shrink-0 rounded-lg overflow-hidden bg-secondary">
                                                     <Image
                                                         src={book.coverUrl}
                                                         alt={book.title}
@@ -106,41 +107,45 @@ export default function CartPage() {
                                                         className="object-cover"
                                                     />
                                                 </div>
-                                                <div className="flex-1 space-y-2">
-                                                    <h3 className="font-bold font-serif text-lg line-clamp-1">{book.title}</h3>
-                                                    <p className="text-sm text-muted-foreground">{book.author}</p>
-                                                    <p className="text-sm font-medium capitalize">
+                                                <div className="flex-1 flex flex-col min-w-0">
+                                                    <div className="flex justify-between items-start gap-2">
+                                                        <div className="min-w-0 flex-1">
+                                                            <h3 className="font-bold font-serif text-sm sm:text-base md:text-lg line-clamp-2 sm:line-clamp-1">{book.title}</h3>
+                                                            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">{book.author}</p>
+                                                        </div>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 sm:h-9 sm:w-9 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                                                            onClick={() => removeItem(item.bookId, item.format)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                    <p className="text-xs sm:text-sm font-medium capitalize mt-1">
                                                         <span className="text-muted-foreground">Format:</span> {item.format}
                                                     </p>
-                                                    <p className="text-lg font-bold text-primary">Rs. {item.price.toFixed(2)}</p>
-                                                </div>
-                                                <div className="flex flex-col items-end justify-between">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                        onClick={() => removeItem(item.bookId, item.format)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                    <div className="flex items-center gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-8 w-8 rounded-full"
-                                                            onClick={() => updateQuantity(item.bookId, item.format, Math.max(1, item.quantity - 1))}
-                                                        >
-                                                            <Minus className="h-3 w-3" />
-                                                        </Button>
-                                                        <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-8 w-8 rounded-full"
-                                                            onClick={() => updateQuantity(item.bookId, item.format, item.quantity + 1)}
-                                                        >
-                                                            <Plus className="h-3 w-3" />
-                                                        </Button>
+                                                    <div className="flex items-center justify-between mt-auto pt-2 sm:pt-3">
+                                                        <div className="flex items-center gap-1.5 sm:gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
+                                                                onClick={() => updateQuantity(item.bookId, item.format, Math.max(1, item.quantity - 1))}
+                                                            >
+                                                                <Minus className="h-3 w-3" />
+                                                            </Button>
+                                                            <span className="w-6 sm:w-8 text-center text-xs sm:text-sm font-medium">{item.quantity}</span>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
+                                                                onClick={() => updateQuantity(item.bookId, item.format, item.quantity + 1)}
+                                                            >
+                                                                <Plus className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                        <p className="text-sm sm:text-base md:text-lg font-bold text-primary">Rs. {item.price.toFixed(0)}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -152,12 +157,12 @@ export default function CartPage() {
                     </div>
 
                     {/* Order Summary */}
-                    <div className="space-y-6">
-                        <Card className="glass-panel shadow-xl sticky top-24">
-                            <CardHeader>
-                                <CardTitle className="font-serif text-2xl">Order Summary</CardTitle>
+                    <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
+                        <Card className="glass-panel shadow-xl lg:sticky lg:top-24">
+                            <CardHeader className="p-4 sm:p-6">
+                                <CardTitle className="font-serif text-xl sm:text-2xl">Order Summary</CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4">
+                            <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">Subtotal</span>
                                     <span className="font-medium">Rs. {subtotal.toFixed(2)}</span>
@@ -171,18 +176,18 @@ export default function CartPage() {
                                     <span className="font-medium">Rs. {tax.toFixed(2)}</span>
                                 </div>
                                 <Separator />
-                                <div className="flex justify-between font-bold text-xl">
+                                <div className="flex justify-between font-bold text-lg sm:text-xl">
                                     <span>Total</span>
                                     <span className="text-primary">Rs. {total.toFixed(2)}</span>
                                 </div>
                             </CardContent>
-                            <CardFooter className="flex-col gap-4">
-                                <Button className="w-full h-12 text-base rounded-full shadow-lg" size="lg">
+                            <CardFooter className="flex-col gap-2 sm:gap-3 md:gap-4 p-4 sm:p-6 pt-0 sm:pt-0">
+                                <Button className="w-full h-11 sm:h-12 text-sm sm:text-base rounded-full shadow-lg" size="lg">
                                     Proceed to Checkout
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    className="w-full rounded-full"
+                                    className="w-full h-10 sm:h-11 text-sm rounded-full"
                                     onClick={clearCart}
                                 >
                                     Clear Cart
