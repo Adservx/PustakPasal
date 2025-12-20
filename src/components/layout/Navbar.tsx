@@ -138,45 +138,14 @@ export function Navbar() {
                         </Button>
 
                         {/* Search Toggle (Desktop) */}
-                        <div className="relative hidden md:block">
-                            <AnimatePresence>
-                                {isSearchOpen ? (
-                                    <motion.div
-                                        initial={{ width: 40, opacity: 0 }}
-                                        animate={{ width: 280, opacity: 1 }}
-                                        exit={{ width: 40, opacity: 0 }}
-                                        className="flex items-center overflow-hidden rounded-full bg-secondary/80 border border-border focus-within:bg-background transition-colors absolute right-0 top-0 bottom-0 my-auto h-12 z-20 shadow-lg"
-                                    >
-                                        <Input
-                                            type="search"
-                                            placeholder="Search titles..."
-                                            className="h-full border-none bg-transparent focus-visible:ring-0 px-5 w-full text-base"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            onKeyDown={handleSearch}
-                                            autoFocus
-                                        />
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-10 w-10 rounded-full shrink-0 mr-1 hover:bg-background/50"
-                                            onClick={() => setIsSearchOpen(false)}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </motion.div>
-                                ) : (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-12 w-12 rounded-full hover:bg-secondary/80 transition-all hover:scale-110"
-                                        onClick={() => setIsSearchOpen(true)}
-                                    >
-                                        <Search className="h-5 w-5" />
-                                    </Button>
-                                )}
-                            </AnimatePresence>
-                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hidden md:flex h-12 w-12 rounded-full hover:bg-secondary/80 transition-all hover:scale-110"
+                            onClick={() => setIsSearchOpen(!isSearchOpen)}
+                        >
+                            <Search className="h-5 w-5" />
+                        </Button>
 
                         <div className="h-6 w-[1px] bg-border/50 mx-2 hidden md:block" />
 
@@ -248,7 +217,7 @@ export function Navbar() {
                 </div>
             </motion.header>
 
-            {/* Mobile Search Overlay */}
+            {/* Search Overlay (Mobile & Desktop) */}
             <AnimatePresence>
                 {isSearchOpen && (
                     <motion.div
@@ -256,15 +225,15 @@ export function Navbar() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.2 }}
-                        className="fixed top-[70px] left-0 right-0 z-[55] md:hidden px-3 pt-2 pb-4"
+                        className="fixed top-[70px] md:top-[90px] left-0 right-0 z-[55] px-3 md:px-4 pt-2 pb-4 md:flex md:justify-center"
                     >
-                        <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border p-3">
+                        <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border p-3 md:w-full md:max-w-xl">
                             <div className="relative flex items-center gap-2">
-                                <Search className="absolute left-4 text-muted-foreground h-4 w-4" />
+                                <Search className="absolute left-4 text-muted-foreground h-4 w-4 md:h-5 md:w-5" />
                                 <Input
                                     type="search"
                                     placeholder="Search books..."
-                                    className="h-11 pl-10 pr-4 bg-secondary/50 border-border rounded-xl focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-accent/50 w-full"
+                                    className="h-11 md:h-12 pl-10 md:pl-12 pr-4 bg-secondary/50 border-border rounded-xl focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-accent/50 w-full"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyDown={handleSearch}
@@ -273,7 +242,7 @@ export function Navbar() {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-9 w-9 rounded-full shrink-0 hover:bg-secondary"
+                                    className="h-9 w-9 md:h-10 md:w-10 rounded-full shrink-0 hover:bg-secondary"
                                     onClick={() => setIsSearchOpen(false)}
                                 >
                                     <X className="h-4 w-4" />
