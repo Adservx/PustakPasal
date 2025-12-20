@@ -83,10 +83,10 @@ export const AnimatedBookCard = memo(function AnimatedBookCard({ book, index = 0
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true, margin: "-30px" }}
-            transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.3) }}
+            transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.15) }}
             onMouseMove={onMouseMove}
             onMouseLeave={handleMouseLeave}
             onMouseEnter={handleMouseEnter}

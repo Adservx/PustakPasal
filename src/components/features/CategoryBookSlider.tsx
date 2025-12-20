@@ -101,9 +101,9 @@ export const CategoryBookSlider = memo(function CategoryBookSlider({
     if (books.length === 0) return null
 
     return (
-        <section className="py-8 sm:py-12 md:py-16 relative overflow-visible">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 overflow-visible">
-                {/* Section Header */}
+        <section className="py-8 sm:py-12 md:py-16 relative">
+            {/* Section Header - with container padding */}
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -147,76 +147,75 @@ export const CategoryBookSlider = memo(function CategoryBookSlider({
                                 <ChevronRight className="h-5 w-5" />
                             </Button>
                         </div>
-
-                        {/* View All Link */}
-                        {href && (
-                            <Link href={href}>
-                                <Button
-                                    variant="link"
-                                    className="text-foreground gap-1.5 sm:gap-2 group text-sm sm:text-base p-0 h-auto"
-                                >
-                                    <span className="hidden xs:inline">View all</span>
-                                    <span className="xs:hidden">All</span>
-                                    <ArrowRight className="w-3.5 sm:w-4 h-3.5 sm:h-4 group-hover:translate-x-1 transition-transform duration-300" />
-                                </Button>
-                            </Link>
-                        )}
                     </div>
                 </motion.div>
+            </div>
 
-                {/* Books Slider */}
-                <div className="relative group">
-                    {/* Gradient Overlays for scroll indication */}
-                    <div
-                        className={`absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollLeft ? 'opacity-100' : 'opacity-0'
-                            }`}
-                    />
-                    <div
-                        className={`absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none transition-opacity duration-300 ${canScrollRight ? 'opacity-100' : 'opacity-0'
-                            }`}
-                    />
+            {/* Books Slider - full width with scroll padding */}
+            <div className="relative group">
+                {/* Scrollable Container */}
+                <div
+                    ref={scrollContainerRef}
+                    className={`flex gap-4 sm:gap-6 overflow-x-auto overflow-y-hidden scrollbar-none pb-4 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'
+                        }`}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseLeave}
+                    onTouchStart={handleTouchStart}
+                    onTouchEnd={handleTouchEnd}
+                    style={{
+                        scrollSnapType: 'x proximity',
+                        WebkitOverflowScrolling: 'touch',
+                        touchAction: 'pan-x pan-y',
+                        scrollPaddingLeft: '1rem',
+                        scrollPaddingRight: '1rem'
+                    }}
+                >
+                    {/* Left transparent spacer - matches container padding */}
+                    <div className="flex-shrink-0 w-4 sm:w-6 lg:w-[calc((100vw-1280px)/2+2rem)]" aria-hidden="true" />
 
-                    {/* Scrollable Container */}
-                    <div
-                        ref={scrollContainerRef}
-                        className={`flex gap-4 sm:gap-6 overflow-x-auto overflow-y-hidden scrollbar-none pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-0 lg:px-0 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'
-                            }`}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseLeave}
-                        onTouchStart={handleTouchStart}
-                        onTouchEnd={handleTouchEnd}
-                        style={{
-                            scrollSnapType: 'x proximity',
-                            WebkitOverflowScrolling: 'touch',
-                            touchAction: 'pan-x pan-y'
-                        }}
-                    >
-                        {books.map((book, index) => (
-                            <motion.div
-                                key={book.id}
-                                initial={{ opacity: 0, x: 50 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true, margin: "-50px" }}
-                                transition={{ delay: index * 0.05, duration: 0.3 }}
-                                className="flex-shrink-0 w-[120px] xs:w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px]"
-                                style={{ scrollSnapAlign: 'start' }}
-                            >
-                                <AnimatedBookCard book={book} index={index} />
-                            </motion.div>
-                        ))}
-                    </div>
+                    {books.map((book, index) => (
+                        <div
+                            key={book.id}
+                            className="flex-shrink-0 w-[120px] xs:w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px]"
+                            style={{ scrollSnapAlign: 'start' }}
+                        >
+                            <AnimatedBookCard book={book} index={index} />
+                        </div>
+                    ))}
 
-                    {/* Mobile Navigation Dots */}
-                    <div className="flex sm:hidden justify-center gap-1.5 mt-4">
-                        <div className={`h-1.5 rounded-full transition-all duration-300 ${!canScrollLeft && canScrollRight ? 'w-4 bg-foreground' : 'w-1.5 bg-muted-foreground/30'
-                            }`} />
-                        <div className={`h-1.5 rounded-full transition-all duration-300 ${canScrollLeft && canScrollRight ? 'w-4 bg-foreground' : 'w-1.5 bg-muted-foreground/30'
-                            }`} />
-                        <div className={`h-1.5 rounded-full transition-all duration-300 ${canScrollLeft && !canScrollRight ? 'w-4 bg-foreground' : 'w-1.5 bg-muted-foreground/30'
-                            }`} />
-                    </div>
+                    {/* View All Card at the end */}
+                    {href && (
+                        <div
+                            className="flex-shrink-0 w-[120px] xs:w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px]"
+                            style={{ scrollSnapAlign: 'start' }}
+                        >
+                            <Link href={href} className="block h-full">
+                                <div className="aspect-[2/3] rounded-lg border border-border/50 bg-secondary/30 hover:bg-secondary/50 transition-all duration-300 flex flex-col items-center justify-center gap-3 group cursor-pointer hover:border-foreground/20">
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-foreground/10 flex items-center justify-center group-hover:bg-foreground/20 transition-colors duration-300">
+                                        <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-foreground group-hover:translate-x-1 transition-transform duration-300" />
+                                    </div>
+                                    <span className="text-sm sm:text-base font-medium text-foreground/80 group-hover:text-foreground transition-colors duration-300">
+                                        View All
+                                    </span>
+                                </div>
+                            </Link>
+                        </div>
+                    )}
+
+                    {/* Right transparent spacer */}
+                    <div className="flex-shrink-0 w-4 sm:w-6 lg:w-[calc((100vw-1280px)/2+2rem)]" aria-hidden="true" />
+                </div>
+
+                {/* Mobile Navigation Dots */}
+                <div className="flex sm:hidden justify-center gap-1.5 mt-4">
+                    <div className={`h-1.5 rounded-full transition-all duration-300 ${!canScrollLeft && canScrollRight ? 'w-4 bg-foreground' : 'w-1.5 bg-muted-foreground/30'
+                        }`} />
+                    <div className={`h-1.5 rounded-full transition-all duration-300 ${canScrollLeft && canScrollRight ? 'w-4 bg-foreground' : 'w-1.5 bg-muted-foreground/30'
+                        }`} />
+                    <div className={`h-1.5 rounded-full transition-all duration-300 ${canScrollLeft && !canScrollRight ? 'w-4 bg-foreground' : 'w-1.5 bg-muted-foreground/30'
+                        }`} />
                 </div>
             </div>
         </section>
