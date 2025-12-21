@@ -9,8 +9,8 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Package, Clock, Truck, CheckCircle2, XCircle, ChevronRight, Search, X, AlertTriangle } from "lucide-react"
-import { Order, getUserOrders, ORDER_STAGES, getStatusIndex, cancelOrder, OrderStatus } from "@/lib/orders"
+import { Package, CheckCircle2, XCircle, ChevronRight, Search, X, AlertTriangle } from "lucide-react"
+import { Order, getUserOrders, ORDER_STAGES, cancelOrder, OrderStatus } from "@/lib/orders"
 
 const statusColors: Record<string, string> = {
     pending: "bg-emerald-400 text-white",
@@ -34,11 +34,30 @@ export default function MyOrdersPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null)
     const [cancelReason, setCancelReason] = useState("")
+    const [selectedReasonIndex, setSelectedReasonIndex] = useState<number | null>(null)
     const [cancelLoading, setCancelLoading] = useState(false)
     const router = useRouter()
     const supabase = createClient()
 
+    const CANCEL_REASONS = [
+        "Changed my mind",
+        "Found a better price elsewhere",
+        "Ordered by mistake",
+        "Delivery time is too long",
+        "Need to change shipping address",
+        "Other reason"
+    ]
+
     const canCancelOrder = (status: OrderStatus) => !NON_CANCELLABLE_STATUSES.includes(status)
+
+    const handleSelectReason = (index: number) => {
+        setSelectedReasonIndex(index)
+        if (index !== CANCEL_REASONS.length - 1) {
+            setCancelReason(CANCEL_REASONS[index])
+        } else {
+            setCancelReason("")
+        }
+    }
 
     const handleCancelOrder = async () => {
         if (!cancellingOrderId || !cancelReason.trim() || !user) return
@@ -51,11 +70,14 @@ export default function MyOrdersPage() {
             const userOrders = await getUserOrders(user.id)
             setOrders(userOrders)
             setFilteredOrders(userOrders)
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' })
         }
         
         setCancelLoading(false)
         setCancellingOrderId(null)
         setCancelReason("")
+        setSelectedReasonIndex(null)
     }
 
     useEffect(() => {
@@ -335,44 +357,86 @@ export default function MyOrdersPage() {
                         onClick={() => {
                             setCancellingOrderId(null)
                             setCancelReason("")
+                            setSelectedReasonIndex(null)
                         }}
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-card rounded-2xl border shadow-xl max-w-md w-full p-6"
+                            className="bg-white rounded-2xl border border-gray-200 shadow-xl max-w-md w-full p-6"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                                    <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                                <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                                    <AlertTriangle className="h-5 w-5 text-red-600" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-lg">Cancel Order</h3>
-                                    <p className="text-sm text-muted-foreground">This action cannot be undone</p>
+                                    <h3 className="font-semibold text-lg text-gray-900">Cancel Order</h3>
+                                    <p className="text-sm text-gray-600">This action cannot be undone</p>
                                 </div>
                             </div>
 
                             <div className="mb-4">
-                                <label className="text-sm font-medium mb-2 block">
-                                    Reason for cancellation <span className="text-red-500">*</span>
+                                <label className="text-sm font-medium mb-3 block text-gray-900">
+                                    Select a reason for cancellation <span className="text-red-500">*</span>
                                 </label>
-                                <Textarea
-                                    placeholder="Please tell us why you want to cancel this order..."
-                                    value={cancelReason}
-                                    onChange={(e) => setCancelReason(e.target.value)}
-                                    className="min-h-[100px] resize-none"
-                                />
+                                <div className="space-y-2">
+                                    {CANCEL_REASONS.map((reason, index) => (
+                                        <div
+                                            key={index}
+                                            onClick={() => handleSelectReason(index)}
+                                            className={`
+                                                flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border
+                                                ${selectedReasonIndex === index 
+                                                    ? 'bg-gray-100 border-gray-900' 
+                                                    : 'bg-gray-50 border-transparent hover:bg-gray-100'
+                                                }
+                                            `}
+                                        >
+                                            <div className={`
+                                                h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all
+                                                ${selectedReasonIndex === index 
+                                                    ? 'border-gray-900 bg-gray-900' 
+                                                    : 'border-gray-400'
+                                                }
+                                            `}>
+                                                {selectedReasonIndex === index && (
+                                                    <CheckCircle2 className="h-3 w-3 text-white" />
+                                                )}
+                                            </div>
+                                            <span className={`text-sm ${selectedReasonIndex === index ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
+                                                {reason}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Show textarea only for "Other reason" */}
+                                {selectedReasonIndex === CANCEL_REASONS.length - 1 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        className="mt-3"
+                                    >
+                                        <Textarea
+                                            placeholder="Please specify your reason..."
+                                            value={cancelReason}
+                                            onChange={(e) => setCancelReason(e.target.value)}
+                                            className="min-h-[80px] resize-none bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
+                                        />
+                                    </motion.div>
+                                )}
                             </div>
 
                             <div className="flex gap-3">
                                 <Button
                                     variant="outline"
-                                    className="flex-1"
+                                    className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100"
                                     onClick={() => {
                                         setCancellingOrderId(null)
                                         setCancelReason("")
+                                        setSelectedReasonIndex(null)
                                     }}
                                     disabled={cancelLoading}
                                 >
@@ -380,7 +444,7 @@ export default function MyOrdersPage() {
                                 </Button>
                                 <Button
                                     variant="destructive"
-                                    className="flex-1"
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                                     onClick={handleCancelOrder}
                                     disabled={!cancelReason.trim() || cancelLoading}
                                 >

@@ -378,6 +378,7 @@ export default function TrackOrderPage() {
                         onClose={() => setShowCancelModal(false)}
                         onCancelled={() => {
                             setShowCancelModal(false)
+                            window.scrollTo({ top: 0, behavior: 'smooth' })
                             handleSearch() // Refresh order data
                         }}
                     />
@@ -438,59 +439,63 @@ function CancelOrderModal({
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-card rounded-2xl border shadow-2xl max-w-md w-full p-6"
+                className="bg-white rounded-2xl border shadow-2xl max-w-md w-full p-6"
             >
-                <h3 className="text-xl font-semibold mb-2">Cancel Order</h3>
-                <p className="text-muted-foreground text-sm mb-6">
-                    Are you sure you want to cancel order <span className="font-mono font-medium">{order.tracking_number}</span>?
+                <h3 className="text-xl font-semibold mb-2 text-gray-900">Cancel Order</h3>
+                <p className="text-gray-600 text-sm mb-6">
+                    Are you sure you want to cancel order <span className="font-mono font-medium text-gray-900">{order.tracking_number}</span>?
                 </p>
 
                 <div className="space-y-4">
                     <div>
-                        <label className="text-sm font-medium mb-2 block">Reason for cancellation</label>
+                        <label className="text-sm font-medium mb-3 block text-gray-900">Reason for cancellation</label>
                         <div className="space-y-2">
                             {reasons.map((r) => (
-                                <label
+                                <div
                                     key={r}
+                                    onClick={() => setReason(r)}
                                     className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                                        reason === r ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+                                        reason === r 
+                                            ? "border-gray-900 bg-gray-100" 
+                                            : "border-gray-200 hover:bg-gray-50"
                                     }`}
                                 >
-                                    <input
-                                        type="radio"
-                                        name="reason"
-                                        value={r}
-                                        checked={reason === r}
-                                        onChange={(e) => setReason(e.target.value)}
-                                        className="sr-only"
-                                    />
                                     <div
-                                        className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${
-                                            reason === r ? "border-primary" : "border-muted-foreground"
+                                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                            reason === r 
+                                                ? "border-gray-900 bg-gray-900" 
+                                                : "border-gray-400"
                                         }`}
                                     >
-                                        {reason === r && <div className="h-2 w-2 rounded-full bg-primary" />}
+                                        {reason === r && (
+                                            <CheckCircle2 className="h-3 w-3 text-white" />
+                                        )}
                                     </div>
-                                    <span className="text-sm">{r}</span>
-                                </label>
+                                    <span className={`text-sm ${reason === r ? "font-medium text-gray-900" : "text-gray-600"}`}>
+                                        {r}
+                                    </span>
+                                </div>
                             ))}
                         </div>
                     </div>
 
                     {reason === "Other" && (
-                        <div>
-                            <label className="text-sm font-medium mb-2 block">Please specify</label>
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                        >
+                            <label className="text-sm font-medium mb-2 block text-gray-900">Please specify</label>
                             <Input
                                 value={customReason}
                                 onChange={(e) => setCustomReason(e.target.value)}
                                 placeholder="Enter your reason..."
-                                className="h-11"
+                                className="h-11 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                             />
-                        </div>
+                        </motion.div>
                     )}
 
                     {error && (
-                        <p className="text-destructive text-sm flex items-center gap-2">
+                        <p className="text-red-600 text-sm flex items-center gap-2">
                             <AlertCircle className="h-4 w-4" />
                             {error}
                         </p>
@@ -498,14 +503,19 @@ function CancelOrderModal({
                 </div>
 
                 <div className="flex gap-3 mt-6">
-                    <Button variant="outline" className="flex-1" onClick={onClose} disabled={loading}>
+                    <Button 
+                        variant="outline" 
+                        className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100" 
+                        onClick={onClose} 
+                        disabled={loading}
+                    >
                         Keep Order
                     </Button>
                     <Button
                         variant="destructive"
-                        className="flex-1"
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                         onClick={handleCancel}
-                        disabled={loading || !reason}
+                        disabled={loading || !reason || (reason === "Other" && !customReason.trim())}
                     >
                         {loading ? "Cancelling..." : "Cancel Order"}
                     </Button>
