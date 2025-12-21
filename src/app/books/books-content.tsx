@@ -12,11 +12,13 @@ import { Search, SlidersHorizontal, X, LayoutGrid, List, Filter } from "lucide-r
 import { Input } from "@/components/ui/input"
 import { GENRES } from "@/lib/data"
 import { useSearchParams } from "next/navigation"
-import { getBooks } from "@/lib/supabase/books"
 import { Book } from "@/lib/types"
-import { BookGridSkeleton } from "@/components/ui/loading-spinner"
 
-export function BooksContent() {
+interface BooksContentProps {
+    initialBooks: Book[]
+}
+
+export function BooksContent({ initialBooks }: BooksContentProps) {
     const searchParams = useSearchParams()
     const [priceRange, setPriceRange] = useState([5000])
     const [selectedGenres, setSelectedGenres] = useState<string[]>([])
@@ -25,8 +27,7 @@ export function BooksContent() {
     const [sortBy, setSortBy] = useState("relevance")
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
-    const [books, setBooks] = useState<Book[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+    const [books] = useState<Book[]>(initialBooks)
 
     // Initialize from URL params
     useEffect(() => {
@@ -38,21 +39,6 @@ export function BooksContent() {
         if (mood) setSelectedMood(mood)
         if (bestseller) setSortBy("bestselling")
     }, [searchParams])
-
-    useEffect(() => {
-        const fetchBooks = async () => {
-            setIsLoading(true)
-            try {
-                const data = await getBooks()
-                setBooks(data)
-            } catch (error) {
-                console.error('Error fetching books:', error)
-            } finally {
-                setIsLoading(false)
-            }
-        }
-        fetchBooks()
-    }, [])
 
     // Filter logic
     const filteredBooks = books.filter(book => {
@@ -306,9 +292,7 @@ export function BooksContent() {
                         </div>
 
                         {/* Books Grid */}
-                        {isLoading ? (
-                            <BookGridSkeleton count={8} />
-                        ) : sortedBooks.length > 0 ? (
+                        {sortedBooks.length > 0 ? (
                             <div className={`grid ${viewMode === "grid"
                                 ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6"
                                 : "grid-cols-1 gap-4"

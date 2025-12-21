@@ -1,5 +1,9 @@
 import { Suspense } from "react"
 import { BooksContent } from "./books-content"
+import { getBooks } from "@/lib/supabase/books-server"
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
 
 // Loading skeleton for the books page
 function BooksPageSkeleton() {
@@ -37,10 +41,13 @@ function BooksPageSkeleton() {
     )
 }
 
-export default function BooksPage() {
+export default async function BooksPage() {
+    // Fetch books on the server
+    const books = await getBooks()
+    
     return (
         <Suspense fallback={<BooksPageSkeleton />}>
-            <BooksContent />
+            <BooksContent initialBooks={books} />
         </Suspense>
     )
 }
