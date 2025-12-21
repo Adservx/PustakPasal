@@ -59,7 +59,7 @@ export function BooksContent() {
         const matchesSearch = searchQuery === "" ||
             book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            book.description.toLowerCase().includes(searchQuery.toLowerCase())
+            (book.description && book.description.toLowerCase().includes(searchQuery.toLowerCase()))
 
         const matchesGenre = selectedGenres.length === 0 ||
             book.genres?.some((g: string) => selectedGenres.includes(g))
