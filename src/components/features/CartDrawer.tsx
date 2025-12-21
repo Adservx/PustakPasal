@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { ShoppingCart, X, Plus, Minus, Trash2, ArrowRight } from "lucide-react"
+import { ShoppingCart, X, Plus, Minus, Trash2, ArrowRight, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/store/cart-store"
@@ -11,11 +11,13 @@ import { getBooks } from "@/lib/supabase/books"
 import { Book } from "@/lib/types"
 import Link from "next/link"
 import { createPortal } from "react-dom"
+import { BuyNowModal } from "./BuyNowModal"
 
 export function CartDrawer() {
     const [isOpen, setIsOpen] = useState(false)
     const [books, setBooks] = useState<Book[]>([])
     const [mounted, setMounted] = useState(false)
+    const [buyNowItem, setBuyNowItem] = useState<any>(null)
     const { items, removeItem, updateQuantity, getTotalItems, getTotalPrice, clearCart } = useCartStore()
 
     useEffect(() => {
@@ -127,7 +129,26 @@ export function CartDrawer() {
                                                                 <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                                             </button>
                                                         </div>
-                                                        <span className="font-bold text-sm sm:text-base">Rs. {(item.price * item.quantity).toFixed(0)}</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setBuyNowItem({
+                                                                        bookId: book.id,
+                                                                        title: book.title,
+                                                                        author: book.author,
+                                                                        coverUrl: book.coverUrl,
+                                                                        format: item.format,
+                                                                        price: item.price,
+                                                                        quantity: item.quantity,
+                                                                    })
+                                                                    setIsOpen(false)
+                                                                }}
+                                                                className="text-xs px-2 py-1 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-medium transition-colors"
+                                                            >
+                                                                Buy
+                                                            </button>
+                                                            <span className="font-bold text-sm sm:text-base">Rs. {(item.price * item.quantity).toFixed(0)}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </motion.div>
@@ -199,6 +220,14 @@ export function CartDrawer() {
             </Button>
 
             {mounted && createPortal(drawerContent, document.body)}
+
+            {/* Buy Now Modal */}
+            {buyNowItem && (
+                <BuyNowModal
+                    item={buyNowItem}
+                    onClose={() => setBuyNowItem(null)}
+                />
+            )}
         </>
     )
 }

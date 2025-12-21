@@ -90,7 +90,7 @@ export function PageLoader({ text = "Loading..." }: { text?: string }) {
                 {/* Loading bar */}
                 <div className="w-48 h-1 bg-secondary rounded-full overflow-hidden">
                     <motion.div
-                        className="h-full bg-accent rounded-full"
+                        className="h-full bg-foreground rounded-full"
                         initial={{ x: "-100%" }}
                         animate={{ x: "100%" }}
                         transition={{

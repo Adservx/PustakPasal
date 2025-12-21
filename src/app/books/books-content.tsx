@@ -14,7 +14,7 @@ import { GENRES } from "@/lib/data"
 import { useSearchParams } from "next/navigation"
 import { getBooks } from "@/lib/supabase/books"
 import { Book } from "@/lib/types"
-import { LoadingSpinner, BookGridSkeleton } from "@/components/ui/loading-spinner"
+import { BookGridSkeleton } from "@/components/ui/loading-spinner"
 
 export function BooksContent() {
     const searchParams = useSearchParams()
@@ -105,29 +105,29 @@ export function BooksContent() {
     const hasActiveFilters = searchQuery || selectedGenres.length > 0 || selectedMood || priceRange[0] < 5000
 
     return (
-        <div className="min-h-screen bg-background pt-24 sm:pt-28 md:pt-32 lg:pt-40 pb-12 sm:pb-16 md:pb-20">
+        <div className="min-h-screen bg-background pt-20 sm:pt-24 md:pt-28 lg:pt-32 pb-8 sm:pb-12 md:pb-16">
             {/* Header */}
-            <div className="container px-3 sm:px-4 md:px-6 mx-auto mb-6 sm:mb-8 md:mb-10 lg:mb-12">
+            <div className="container px-4 sm:px-6 mx-auto mb-6 sm:mb-8 md:mb-10">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="max-w-4xl mx-auto text-center space-y-3 sm:space-y-4 md:space-y-6"
+                    className="max-w-3xl mx-auto text-center space-y-3 sm:space-y-4"
                 >
-                    <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-serif font-medium tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-medium tracking-tight">
                         The Collection
                     </h1>
-                    <p className="text-xs sm:text-sm md:text-base lg:text-lg text-muted-foreground max-w-2xl mx-auto font-light px-2 sm:px-4">
+                    <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto font-light">
                         Explore our curated selection of literary treasures. From timeless classics to contemporary masterpieces.
                     </p>
 
                     {/* Search Bar */}
-                    <div className="relative max-w-xl mx-auto mt-4 sm:mt-6 md:mt-8 group px-1 sm:px-2">
+                    <div className="relative max-w-md mx-auto mt-4 sm:mt-6 group">
                         <div className="absolute inset-0 bg-accent/5 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         <div className="relative">
-                            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4 sm:h-5 sm:w-5" />
+                            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                             <Input
                                 placeholder="Search books..."
-                                className="h-10 sm:h-11 md:h-12 lg:h-14 pl-9 sm:pl-10 md:pl-12 pr-4 bg-background/50 backdrop-blur-sm border-border/50 shadow-sm text-sm md:text-base rounded-full focus:ring-accent/20 transition-all"
+                                className="h-10 sm:h-12 pl-10 sm:pl-11 pr-4 bg-background/50 backdrop-blur-sm border-border/50 shadow-sm text-sm rounded-full focus:ring-accent/20 transition-all"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -136,25 +136,34 @@ export function BooksContent() {
                 </motion.div>
             </div>
 
-            <div className="container px-3 sm:px-4 md:px-6 mx-auto">
-                <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12">
-                    {/* Sidebar Filters */}
+            <div className="container px-4 sm:px-6 mx-auto">
+                <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+                    {/* Sidebar Filters - Mobile Overlay */}
                     <aside className={`
-                        lg:w-52 xl:w-56 2xl:w-64 flex-shrink-0 space-y-5 sm:space-y-6 md:space-y-8
-                        ${isMobileFiltersOpen ? 'fixed inset-0 z-50 bg-background p-4 sm:p-5 md:p-6 overflow-y-auto safe-top safe-bottom' : 'hidden lg:block'}
+                        lg:w-56 xl:w-60 flex-shrink-0 space-y-6
+                        ${isMobileFiltersOpen 
+                            ? 'fixed inset-0 z-50 bg-background p-4 pt-6 overflow-y-auto' 
+                            : 'hidden lg:block lg:sticky lg:top-24 lg:h-fit lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:scrollbar-none'
+                        }
                     `}>
-                        <div className="flex items-center justify-between lg:hidden mb-4 sm:mb-5 md:mb-6 pt-2">
-                            <h3 className="font-serif text-lg sm:text-xl md:text-2xl">Filters</h3>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10" onClick={() => setIsMobileFiltersOpen(false)}>
-                                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                        {/* Mobile Filter Header */}
+                        <div className="flex items-center justify-between lg:hidden mb-4">
+                            <h3 className="font-serif text-xl font-medium">Filters</h3>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-9 w-9" 
+                                onClick={() => setIsMobileFiltersOpen(false)}
+                            >
+                                <X className="h-5 w-5" />
                             </Button>
                         </div>
 
-                        <div className="space-y-8">
+                        <div className="space-y-6">
                             {/* Active Mood */}
                             {selectedMood && (
                                 <div>
-                                    <h4 className="font-medium mb-3 text-sm uppercase tracking-wider text-muted-foreground">Active Mood</h4>
+                                    <h4 className="font-medium mb-3 text-xs uppercase tracking-wider text-muted-foreground">Active Mood</h4>
                                     <Badge variant="secondary" className="text-sm px-3 py-1.5 gap-2 w-full justify-between">
                                         {selectedMood}
                                         <X
@@ -167,13 +176,13 @@ export function BooksContent() {
 
                             {/* Price Range */}
                             <div>
-                                <h4 className="font-medium mb-4 text-sm uppercase tracking-wider text-muted-foreground">Price Range</h4>
+                                <h4 className="font-medium mb-4 text-xs uppercase tracking-wider text-muted-foreground">Price Range</h4>
                                 <Slider
                                     value={priceRange}
                                     onValueChange={setPriceRange}
                                     max={5000}
                                     step={100}
-                                    className="my-6"
+                                    className="my-4"
                                 />
                                 <div className="flex justify-between text-sm font-medium">
                                     <span className="text-muted-foreground">NRS 0</span>
@@ -185,10 +194,14 @@ export function BooksContent() {
 
                             {/* Genres */}
                             <div>
-                                <h4 className="font-medium mb-4 text-sm uppercase tracking-wider text-muted-foreground">Genres</h4>
-                                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 scrollbar-none">
+                                <h4 className="font-medium mb-4 text-xs uppercase tracking-wider text-muted-foreground">Genres</h4>
+                                <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-2 scrollbar-none">
                                     {GENRES.map((genre) => (
-                                        <div key={genre} className="flex items-center space-x-3 group cursor-pointer" onClick={() => toggleGenre(genre)}>
+                                        <div 
+                                            key={genre} 
+                                            className="flex items-center space-x-3 group cursor-pointer" 
+                                            onClick={() => toggleGenre(genre)}
+                                        >
                                             <Checkbox
                                                 id={genre}
                                                 checked={selectedGenres.includes(genre)}
@@ -215,63 +228,74 @@ export function BooksContent() {
                                     Clear All Filters
                                 </Button>
                             )}
+
+                            {/* Mobile Apply Button */}
+                            <div className="lg:hidden pt-4">
+                                <Button 
+                                    className="w-full" 
+                                    onClick={() => setIsMobileFiltersOpen(false)}
+                                >
+                                    Show {sortedBooks.length} Results
+                                </Button>
+                            </div>
                         </div>
                     </aside>
 
                     {/* Main Content */}
                     <div className="flex-1 min-w-0">
                         {/* Toolbar */}
-                        <div className="flex flex-col xs:flex-row items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6 md:mb-8 sticky top-20 z-30 bg-background/80 backdrop-blur-md py-3 sm:py-4 -mx-3 sm:-mx-4 px-3 sm:px-4 md:mx-0 md:px-0 md:bg-transparent md:backdrop-blur-none md:static md:py-0">
-                            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 w-full xs:w-auto">
+                        <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6 sticky top-16 sm:top-20 z-30 bg-background/95 backdrop-blur-sm py-3 -mx-4 px-4 sm:mx-0 sm:px-0 sm:bg-transparent sm:backdrop-blur-none sm:static sm:py-0 border-b sm:border-none border-border/50">
+                            <div className="flex items-center gap-2">
                                 <Button
                                     variant="outline"
-                                    className="lg:hidden gap-1.5 sm:gap-2 flex-1 xs:flex-none h-9 sm:h-10 text-xs sm:text-sm"
+                                    size="sm"
+                                    className="lg:hidden gap-1.5 h-9 text-sm"
                                     onClick={() => setIsMobileFiltersOpen(true)}
                                 >
-                                    <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                    <Filter className="h-4 w-4" />
                                     Filters
                                 </Button>
-                                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
-                                    Showing <span className="font-medium text-foreground">{sortedBooks.length}</span> results
+                                <p className="text-sm text-muted-foreground">
+                                    <span className="font-medium text-foreground">{sortedBooks.length}</span> books
                                 </p>
                             </div>
 
-                            <div className="flex items-center gap-2 sm:gap-3 w-full xs:w-auto justify-end">
-                                {/* View Mode Toggle */}
-                                <div className="hidden sm:flex items-center gap-1 bg-secondary/50 rounded-full p-0.5 sm:p-1 border border-border/50">
+                            <div className="flex items-center gap-2">
+                                {/* View Mode Toggle - Desktop only */}
+                                <div className="hidden md:flex items-center gap-1 bg-secondary/50 rounded-full p-1 border border-border/50">
                                     <Button
                                         variant={viewMode === "grid" ? "secondary" : "ghost"}
                                         size="sm"
-                                        className="h-7 w-7 sm:h-8 sm:w-8 p-0 rounded-full"
+                                        className="h-7 w-7 p-0 rounded-full"
                                         onClick={() => setViewMode("grid")}
                                     >
-                                        <LayoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                        <LayoutGrid className="h-3.5 w-3.5" />
                                     </Button>
                                     <Button
                                         variant={viewMode === "list" ? "secondary" : "ghost"}
                                         size="sm"
-                                        className="h-7 w-7 sm:h-8 sm:w-8 p-0 rounded-full"
+                                        className="h-7 w-7 p-0 rounded-full"
                                         onClick={() => setViewMode("list")}
                                     >
-                                        <List className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                        <List className="h-3.5 w-3.5" />
                                     </Button>
                                 </div>
 
                                 {/* Sort Dropdown */}
-                                <div className="relative flex-1 xs:flex-none">
+                                <div className="relative">
                                     <select
-                                        className="h-9 sm:h-10 w-full xs:w-auto pl-3 sm:pl-4 pr-7 sm:pr-8 text-xs sm:text-sm border border-border/50 rounded-full bg-background hover:bg-secondary/50 focus:ring-2 focus:ring-accent/20 transition-all appearance-none cursor-pointer outline-none"
+                                        className="h-9 pl-3 pr-8 text-sm border border-border/50 rounded-full bg-background hover:bg-secondary/50 focus:ring-2 focus:ring-accent/20 transition-all appearance-none cursor-pointer outline-none"
                                         value={sortBy}
                                         onChange={(e) => setSortBy(e.target.value)}
                                     >
-                                        <option value="relevance">Most Relevant</option>
-                                        <option value="price-low">Price: Low to High</option>
-                                        <option value="price-high">Price: High to Low</option>
-                                        <option value="newest">Newest First</option>
-                                        <option value="bestselling">Best Selling</option>
-                                        <option value="rating">Highest Rated</option>
+                                        <option value="relevance">Relevant</option>
+                                        <option value="price-low">Price ↑</option>
+                                        <option value="price-high">Price ↓</option>
+                                        <option value="newest">Newest</option>
+                                        <option value="bestselling">Bestselling</option>
+                                        <option value="rating">Top Rated</option>
                                     </select>
-                                    <SlidersHorizontal className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground pointer-events-none" />
+                                    <SlidersHorizontal className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                                 </div>
                             </div>
                         </div>
@@ -281,18 +305,18 @@ export function BooksContent() {
                             <BookGridSkeleton count={8} />
                         ) : sortedBooks.length > 0 ? (
                             <div className={`grid ${viewMode === "grid"
-                                ? "grid-cols-2 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 xs:gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-x-8 gap-y-4 xs:gap-y-5 sm:gap-y-6 md:gap-y-8 lg:gap-y-10 xl:gap-y-12"
-                                : "grid-cols-1 gap-y-4 sm:gap-y-6"
+                                ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6"
+                                : "grid-cols-1 gap-4"
                                 }`}>
                                 <AnimatePresence mode="popLayout">
                                     {sortedBooks.map((book, i) => (
                                         <motion.div
                                             key={book.id}
                                             layout
-                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            initial={{ opacity: 0, scale: 0.95 }}
                                             animate={{ opacity: 1, scale: 1 }}
-                                            exit={{ opacity: 0, scale: 0.9 }}
-                                            transition={{ duration: 0.3, delay: i * 0.05 }}
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            transition={{ duration: 0.2, delay: i * 0.03 }}
                                         >
                                             <AnimatedBookCard book={book} index={i} />
                                         </motion.div>
@@ -303,34 +327,33 @@ export function BooksContent() {
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="text-center py-32"
+                                className="text-center py-16 sm:py-24"
                             >
-                                <div className="max-w-md mx-auto space-y-6">
-                                    <div className="w-24 h-24 rounded-full bg-secondary/50 flex items-center justify-center mx-auto">
-                                        <Search className="h-10 w-10 text-muted-foreground/40" />
+                                <div className="max-w-sm mx-auto space-y-4">
+                                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-secondary/50 flex items-center justify-center mx-auto">
+                                        <Search className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground/40" />
                                     </div>
                                     <div className="space-y-2">
-                                        <h3 className="text-2xl font-serif font-bold">No books found</h3>
-                                        <p className="text-muted-foreground">
-                                            We couldn't find any matches for your current filters.
+                                        <h3 className="text-lg sm:text-xl font-serif font-bold">No books found</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Try adjusting your filters or search terms.
                                         </p>
                                     </div>
-                                    <Button onClick={clearAllFilters} variant="outline" className="rounded-full px-8">
-                                        Clear all filters
+                                    <Button onClick={clearAllFilters} variant="outline" size="sm" className="rounded-full px-6">
+                                        Clear filters
                                     </Button>
                                 </div>
                             </motion.div>
                         )}
 
                         {/* Load More */}
-                        {sortedBooks.length > 0 && (
-                            <div className="mt-10 sm:mt-14 md:mt-16 lg:mt-20 flex justify-center">
+                        {sortedBooks.length > 0 && sortedBooks.length >= 8 && (
+                            <div className="mt-8 sm:mt-12 flex justify-center">
                                 <Button
                                     variant="outline"
-                                    size="lg"
-                                    className="px-6 sm:px-8 md:px-10 h-11 sm:h-12 md:h-14 rounded-full border-border/50 hover:bg-secondary/50 text-sm sm:text-base font-medium transition-all hover:scale-105"
+                                    className="px-6 sm:px-8 h-10 sm:h-11 rounded-full border-border/50 hover:bg-secondary/50 text-sm font-medium transition-all hover:scale-105"
                                 >
-                                    Load More Books
+                                    Load More
                                 </Button>
                             </div>
                         )}

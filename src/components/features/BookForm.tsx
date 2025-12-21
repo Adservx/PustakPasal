@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { GENRES, MOODS } from '@/lib/data'
 import { Loader2 } from 'lucide-react'
+import { BadgeType } from '@/lib/types'
 
 export interface BookFormData {
     title: string
@@ -24,6 +25,7 @@ export interface BookFormData {
     isbn: string
     is_bestseller: boolean
     is_new: boolean
+    badge_type: BadgeType
     mood: string[]
 }
 
@@ -36,10 +38,19 @@ interface BookFormProps {
 
 const FORMAT_OPTIONS = ['hardcover', 'paperback', 'ebook', 'audiobook']
 
+const BADGE_OPTIONS: { value: BadgeType; label: string; emoji: string }[] = [
+    { value: null, label: 'No Badge', emoji: '➖' },
+    { value: 'bestseller', label: 'Bestseller', emoji: '🏆' },
+    { value: 'new', label: 'New Release', emoji: '✨' },
+    { value: 'trending', label: 'Trending', emoji: '🔥' },
+    { value: 'featured', label: 'Featured', emoji: '⭐' },
+    { value: 'limited', label: 'Limited Edition', emoji: '💎' },
+    { value: 'sale', label: 'On Sale', emoji: '🏷️' },
+]
+
 export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormProps) {
     const [loading, setLoading] = useState(false)
     const [errors, setErrors] = useState<Record<string, string>>({})
-    
     const [selectedFormats, setSelectedFormats] = useState<string[]>(
         initialData?.formats || ['paperback']
     )
@@ -51,6 +62,7 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
     )
     const [isBestseller, setIsBestseller] = useState(initialData?.is_bestseller || false)
     const [isNew, setIsNew] = useState(initialData?.is_new || false)
+    const [badgeType, setBadgeType] = useState<BadgeType>(initialData?.badge_type || null)
 
     const toggleFormat = (format: string) => {
         setSelectedFormats(prev =>
@@ -89,6 +101,9 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        
+        if (loading) return // Prevent double submission
+        
         const formData = new FormData(e.currentTarget)
         
         // Add array fields
@@ -97,6 +112,7 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
         formData.set('mood', JSON.stringify(selectedMoods))
         formData.set('is_bestseller', String(isBestseller))
         formData.set('is_new', String(isNew))
+        formData.set('badge_type', badgeType || '')
         
         if (!validateForm(formData)) {
             return
@@ -107,7 +123,6 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
             await onSubmit(formData)
         } catch (error) {
             console.error('Form submission error:', error)
-        } finally {
             setLoading(false)
         }
     }
@@ -305,9 +320,50 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
                 </div>
             </div>
 
-            {/* Flags */}
+            {/* Status Badge */}
             <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">Status</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">Status Badge</h3>
+                
+                {/* Badge Selection - Visual Buttons */}
+                <div>
+                    <label className="block mb-3 text-sm font-medium">Select a badge to display on the book card</label>
+                    <div className="flex flex-wrap gap-2">
+                        {BADGE_OPTIONS.map(option => (
+                            <button
+                                key={option.value ?? 'none'}
+                                type="button"
+                                onClick={() => setBadgeType(option.value)}
+                                className={`px-3 py-2 rounded-lg text-sm border-2 transition-all duration-200 flex items-center gap-2 ${
+                                    badgeType === option.value
+                                        ? 'border-accent bg-accent/10 text-accent font-medium ring-2 ring-accent/20'
+                                        : 'border-border bg-secondary/30 hover:bg-secondary/50 hover:border-accent/50'
+                                }`}
+                            >
+                                <span className="text-base">{option.emoji}</span>
+                                <span>{option.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                    {badgeType && (
+                        <div className="mt-3 p-3 rounded-lg bg-accent/5 border border-accent/20">
+                            <p className="text-sm text-accent font-medium">
+                                ✓ Badge "{BADGE_OPTIONS.find(o => o.value === badgeType)?.label}" will be displayed on this book
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => setBadgeType(null)}
+                                className="text-xs text-muted-foreground hover:text-destructive mt-1 underline"
+                            >
+                                Remove badge
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Legacy Status Flags - Hidden section */}
+            <div className="space-y-4 opacity-50">
+                <h3 className="text-sm font-medium border-b pb-2 text-muted-foreground">Legacy Status (deprecated)</h3>
                 <div className="flex gap-6">
                     <div className="flex items-center space-x-2">
                         <Checkbox
@@ -315,7 +371,7 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
                             checked={isBestseller}
                             onCheckedChange={(checked) => setIsBestseller(checked === true)}
                         />
-                        <label htmlFor="is_bestseller" className="text-sm cursor-pointer">
+                        <label htmlFor="is_bestseller" className="text-sm cursor-pointer text-muted-foreground">
                             Bestseller
                         </label>
                     </div>
@@ -325,14 +381,18 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
                             checked={isNew}
                             onCheckedChange={(checked) => setIsNew(checked === true)}
                         />
-                        <label htmlFor="is_new" className="text-sm cursor-pointer">
+                        <label htmlFor="is_new" className="text-sm cursor-pointer text-muted-foreground">
                             New Release
                         </label>
                     </div>
                 </div>
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full">
+            <Button 
+                type="submit" 
+                disabled={loading} 
+                className={`w-full ${mode === 'edit' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+            >
                 {loading ? (
                     <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

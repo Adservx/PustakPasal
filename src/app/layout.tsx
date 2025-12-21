@@ -5,6 +5,10 @@ import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
+import { Suspense } from "react";
+import { NavigationProgress } from "@/components/ui/navigation-progress";
+import { ScrollToTop } from "@/components/ui/scroll-to-top";
 
 
 const inter = Inter({
@@ -47,11 +51,16 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="light"
         >
+          <Suspense fallback={null}>
+            <NavigationProgress />
+            <ScrollToTop />
+          </Suspense>
           <div className="relative flex min-h-screen flex-col">
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
+          <Toaster position="top-center" richColors />
         </ThemeProvider>
       </body>
     </html>

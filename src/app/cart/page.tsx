@@ -12,11 +12,14 @@ import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { BuyNowModal } from "@/components/features/BuyNowModal"
+import { toast } from "sonner"
 
 export default function CartPage() {
     const { items, updateQuantity, removeItem, clearCart } = useCartStore()
     const [books, setBooks] = useState<Book[]>([])
     const [loading, setLoading] = useState(true)
+    const [buyNowItem, setBuyNowItem] = useState<any>(null)
 
     useEffect(() => {
         async function fetchBooks() {
@@ -147,6 +150,26 @@ export default function CartPage() {
                                                         </div>
                                                         <p className="text-sm sm:text-base md:text-lg font-bold text-primary">Rs. {item.price.toFixed(0)}</p>
                                                     </div>
+                                                    {/* Buy Now button for individual item */}
+                                                    <div className="mt-2 pt-2 border-t">
+                                                        <Button
+                                                            size="sm"
+                                                            className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xs sm:text-sm"
+                                                            onClick={() => {
+                                                                setBuyNowItem({
+                                                                    bookId: book.id,
+                                                                    title: book.title,
+                                                                    author: book.author,
+                                                                    coverUrl: book.coverUrl,
+                                                                    format: item.format,
+                                                                    price: item.price,
+                                                                    quantity: item.quantity,
+                                                                })
+                                                            }}
+                                                        >
+                                                            Buy Now
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </CardContent>
@@ -182,7 +205,29 @@ export default function CartPage() {
                                 </div>
                             </CardContent>
                             <CardFooter className="flex-col gap-2 sm:gap-3 md:gap-4 p-4 sm:p-6 pt-0 sm:pt-0">
-                                <Button className="w-full h-11 sm:h-12 text-sm sm:text-base rounded-full shadow-lg" size="lg">
+                                <Button 
+                                    className="w-full h-11 sm:h-12 text-sm sm:text-base rounded-full shadow-lg bg-amber-500 hover:bg-amber-600" 
+                                    size="lg"
+                                    onClick={() => {
+                                        // Create combined order item for all cart items
+                                        if (items.length === 1) {
+                                            const book = getBookForItem(items[0].bookId)
+                                            if (book) {
+                                                setBuyNowItem({
+                                                    bookId: book.id,
+                                                    title: book.title,
+                                                    author: book.author,
+                                                    coverUrl: book.coverUrl,
+                                                    format: items[0].format,
+                                                    price: items[0].price,
+                                                    quantity: items[0].quantity,
+                                                })
+                                            }
+                                        } else {
+                                            toast.info("Please use 'Buy Now' on individual items for multiple products")
+                                        }
+                                    }}
+                                >
                                     Proceed to Checkout
                                 </Button>
                                 <Button
@@ -197,6 +242,14 @@ export default function CartPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Buy Now Modal */}
+            {buyNowItem && (
+                <BuyNowModal
+                    item={buyNowItem}
+                    onClose={() => setBuyNowItem(null)}
+                />
+            )}
         </div>
     )
 }

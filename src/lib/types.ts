@@ -1,3 +1,5 @@
+export type BadgeType = 'bestseller' | 'new' | 'trending' | 'featured' | 'limited' | 'sale' | null;
+
 export interface Book {
     id: string;
     title: string;
@@ -28,6 +30,7 @@ export interface Book {
     tags: string[];
     isBestseller?: boolean;
     isNew?: boolean;
+    badgeType?: BadgeType;
     mood?: string[];
 }
 

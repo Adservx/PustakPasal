@@ -94,13 +94,27 @@ export default async function AdminPage() {
                         <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold mb-2">Admin Dashboard</h1>
                         <p className="text-sm md:text-base text-muted-foreground">Manage your book collection and inventory</p>
                     </div>
-                    <Link href="/admin/add">
-                        <Button size="lg" className="gap-2 rounded-full shadow-lg w-full md:w-auto">
-                            <Plus className="w-4 h-4 md:w-5 md:h-5" />
-                            <span className="hidden sm:inline">Add New Book</span>
-                            <span className="sm:hidden">Add Book</span>
-                        </Button>
-                    </Link>
+                    <div className="flex gap-3 w-full md:w-auto">
+                        <Link href="/admin/orders">
+                            <Button variant="outline" className="gap-2">
+                                <Package className="w-4 h-4" />
+                                <span className="hidden sm:inline">Orders</span>
+                            </Button>
+                        </Link>
+                        <Link href="/admin/settings">
+                            <Button variant="outline" className="gap-2">
+                                <Users className="w-4 h-4" />
+                                <span className="hidden sm:inline">Settings</span>
+                            </Button>
+                        </Link>
+                        <Link href="/admin/add">
+                            <Button size="lg" className="gap-2 rounded-full shadow-lg flex-1 md:flex-none">
+                                <Plus className="w-4 h-4 md:w-5 md:h-5" />
+                                <span className="hidden sm:inline">Add New Book</span>
+                                <span className="sm:hidden">Add Book</span>
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Stats Grid */}

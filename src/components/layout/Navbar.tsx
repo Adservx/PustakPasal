@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Search, User, Heart, Menu, X, BookOpen, Home } from "lucide-react"
+import { Search, User, Heart, Menu, X, BookOpen, Home, ShoppingCart, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MegaMenu } from "@/components/layout/MegaMenu"
@@ -11,6 +11,7 @@ import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "framer-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useWishlistStore } from "@/store/wishlist-store"
+import { useCartStore } from "@/store/cart-store"
 import { createClient } from "@/lib/supabase/client"
 
 export function Navbar() {
@@ -22,19 +23,43 @@ export function Navbar() {
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const { bookIds } = useWishlistStore()
+    const { getTotalItems } = useCartStore()
     const { scrollY } = useScroll()
     const [user, setUser] = useState<any>(null)
+    const [isAdmin, setIsAdmin] = useState(false)
     const supabase = createClient()
 
     useEffect(() => {
         const getUser = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             setUser(user)
+            
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single()
+                setIsAdmin(profile?.role === 'admin')
+            } else {
+                setIsAdmin(false)
+            }
         }
         getUser()
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setUser(session?.user ?? null)
+            
+            if (session?.user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', session.user.id)
+                    .single()
+                setIsAdmin(profile?.role === 'admin')
+            } else {
+                setIsAdmin(false)
+            }
         })
 
         return () => subscription.unsubscribe()
@@ -106,7 +131,7 @@ export function Navbar() {
                             Hamro Pustak Pasal
                         </span>
                         <span className="font-serif text-xs font-bold tracking-tight transition-colors text-gradient whitespace-nowrap xs:hidden">
-                            Hamro Pustak
+                            Hamro Pustak Pasal
                         </span>
                     </Link>
 
@@ -127,14 +152,19 @@ export function Navbar() {
                             <Search className="h-4 w-4" />
                         </Button>
 
+                        {/* Cart Drawer - shown on mobile before menu toggle */}
+                        <div className="lg:hidden">
+                            <CartDrawer />
+                        </div>
+
                         {/* Mobile Menu Toggle */}
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="lg:hidden h-9 w-9 md:h-12 md:w-12 rounded-full hover:bg-secondary/80 transition-colors"
+                            className="lg:hidden h-9 w-9 md:h-12 md:w-12 rounded-full hover:bg-secondary/50 transition-colors"
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         >
-                            <Menu className="h-5 w-5 md:h-6 md:w-6" />
+                            <Menu className="h-4 w-4 md:h-5 md:w-5" />
                         </Button>
 
                         {/* Search Toggle (Desktop) */}
@@ -165,13 +195,16 @@ export function Navbar() {
                             )}
                         </Button>
 
-                        <CartDrawer />
+                        {/* Cart Drawer - Desktop only (mobile version is above) */}
+                        <div className="hidden lg:block">
+                            <CartDrawer />
+                        </div>
 
                         <div className="h-6 w-[1px] bg-border/50 mx-2 hidden md:block" />
 
                         {user ? (
                             <div className="relative group hidden md:block">
-                                <Link href="/admin">
+                                <Link href={isAdmin ? "/admin" : "/my-orders"}>
                                     <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full hover:bg-secondary/80 transition-all hover:scale-110">
                                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20">
                                             {user.user_metadata?.avatar_url ? (
@@ -189,8 +222,13 @@ export function Navbar() {
                                         <p className="font-medium text-sm truncate">{user.user_metadata?.full_name || 'User'}</p>
                                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                                     </div>
-                                    <Link href="/admin" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-secondary/50 transition-colors">
-                                        <User className="h-4 w-4" /> Account
+                                    {isAdmin && (
+                                        <Link href="/admin" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-secondary/50 transition-colors">
+                                            <User className="h-4 w-4" /> Admin Panel
+                                        </Link>
+                                    )}
+                                    <Link href="/my-orders" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-secondary/50 transition-colors">
+                                        <Package className="h-4 w-4" /> My Orders
                                     </Link>
                                     <button
                                         onClick={async () => {
@@ -262,7 +300,12 @@ export function Navbar() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] lg:hidden"
+                            className="fixed inset-0 z-[60] lg:hidden"
+                            style={{
+                                backgroundColor: "rgba(0, 0, 0, 0.6)",
+                                backdropFilter: "blur(12px)",
+                                WebkitBackdropFilter: "blur(12px)",
+                            }}
                             onClick={() => setIsMobileMenuOpen(false)}
                         />
 
@@ -272,7 +315,8 @@ export function Navbar() {
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed top-0 right-0 bottom-0 w-full max-w-sm bg-background/95 backdrop-blur-xl border-l border-border shadow-2xl z-[70] lg:hidden overflow-y-auto"
+                            className="fixed top-0 right-0 bottom-0 w-full max-w-sm bg-background border-l border-border/50 shadow-2xl z-[70] lg:hidden overflow-y-auto"
+                            style={{ backgroundColor: "hsl(var(--background))" }}
                         >
                             <div className="p-6 space-y-6">
                                 {/* Header */}
@@ -325,6 +369,27 @@ export function Navbar() {
                                         <span className="font-medium">Browse Books</span>
                                     </Link>
                                     <Link
+                                        href="/cart"
+                                        className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary/50 transition-colors relative"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <ShoppingCart className="h-5 w-5" />
+                                        <span className="font-medium">My Cart</span>
+                                        {getTotalItems() > 0 && (
+                                            <span className="ml-auto bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
+                                                {getTotalItems()}
+                                            </span>
+                                        )}
+                                    </Link>
+                                    <Link
+                                        href="/my-orders"
+                                        className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary/50 transition-colors"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <Package className="h-5 w-5" />
+                                        <span className="font-medium">My Orders</span>
+                                    </Link>
+                                    <Link
                                         href="/wishlist"
                                         className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary/50 transition-colors relative"
                                         onClick={() => setIsMobileMenuOpen(false)}
@@ -350,14 +415,16 @@ export function Navbar() {
                                             <p className="font-medium text-sm">{user.user_metadata?.full_name || 'User'}</p>
                                             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                                         </div>
-                                        <Link
-                                            href="/admin"
-                                            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary/50 transition-colors"
-                                            onClick={() => setIsMobileMenuOpen(false)}
-                                        >
-                                            <User className="h-5 w-5" />
-                                            <span className="font-medium">Admin Panel</span>
-                                        </Link>
+                                        {isAdmin && (
+                                            <Link
+                                                href="/admin"
+                                                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary/50 transition-colors"
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                            >
+                                                <User className="h-5 w-5" />
+                                                <span className="font-medium">Admin Panel</span>
+                                            </Link>
+                                        )}
                                         <button
                                             onClick={async () => {
                                                 await supabase.auth.signOut()

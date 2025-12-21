@@ -47,6 +47,7 @@ export function mapBookData(book: any): Book {
         tags: book.tags,
         isBestseller: book.is_bestseller,
         isNew: book.is_new,
+        badgeType: book.badge_type,
         mood: book.mood,
     };
 }

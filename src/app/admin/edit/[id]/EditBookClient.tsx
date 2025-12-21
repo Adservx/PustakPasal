@@ -3,8 +3,9 @@
 import { BookForm, BookFormData } from '@/components/features/BookForm'
 import { updateBook } from '../../actions'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
+import { useState } from 'react'
 
 interface EditBookClientProps {
     book: any
@@ -13,6 +14,7 @@ interface EditBookClientProps {
 
 export function EditBookClient({ book, bookId }: EditBookClientProps) {
     const router = useRouter()
+    const [showSuccess, setShowSuccess] = useState(false)
 
     const initialData: Partial<BookFormData> = {
         title: book.title,
@@ -31,12 +33,24 @@ export function EditBookClient({ book, bookId }: EditBookClientProps) {
         isbn: book.isbn,
         is_bestseller: book.is_bestseller,
         is_new: book.is_new,
+        badge_type: book.badge_type,
         mood: book.mood || [],
     }
 
     const handleSubmit = async (formData: FormData) => {
-        await updateBook(bookId, formData)
-        router.push('/admin')
+        try {
+            const result = await updateBook(bookId, formData)
+            if (result?.success) {
+                setShowSuccess(true)
+                // Wait for notification to show, then redirect
+                setTimeout(() => {
+                    router.push('/admin')
+                    router.refresh()
+                }, 1500)
+            }
+        } catch (error) {
+            console.error('Update failed:', error)
+        }
     }
 
     return (
@@ -54,6 +68,14 @@ export function EditBookClient({ book, bookId }: EditBookClientProps) {
                     />
                 </div>
             </div>
+
+            {/* Success notification */}
+            {showSuccess && (
+                <div className="fixed bottom-6 right-6 bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 animate-in slide-in-from-bottom-4">
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span>Book updated successfully!</span>
+                </div>
+            )}
         </div>
     )
 }

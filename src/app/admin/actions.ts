@@ -30,6 +30,7 @@ export async function createBook(formData: FormData) {
     const genres = JSON.parse(formData.get('genres') as string || '[]')
     const mood = JSON.parse(formData.get('mood') as string || '[]')
 
+    const badgeTypeValue = formData.get('badge_type') as string
     const book = {
         title: formData.get('title') as string,
         author: formData.get('author') as string,
@@ -48,6 +49,7 @@ export async function createBook(formData: FormData) {
         isbn: formData.get('isbn') as string || '',
         is_bestseller: formData.get('is_bestseller') === 'true',
         is_new: formData.get('is_new') === 'true',
+        badge_type: badgeTypeValue && badgeTypeValue.trim() !== '' ? badgeTypeValue : null,
     }
 
     const { error } = await supabase.from('books').insert(book)
@@ -74,6 +76,7 @@ export async function updateBook(id: string, formData: FormData) {
     const genres = JSON.parse(formData.get('genres') as string || '[]')
     const mood = JSON.parse(formData.get('mood') as string || '[]')
 
+    const badgeTypeValue = formData.get('badge_type') as string
     const updates = {
         title: formData.get('title') as string,
         author: formData.get('author') as string,
@@ -92,7 +95,7 @@ export async function updateBook(id: string, formData: FormData) {
         isbn: formData.get('isbn') as string || '',
         is_bestseller: formData.get('is_bestseller') === 'true',
         is_new: formData.get('is_new') === 'true',
-        updated_at: new Date().toISOString(),
+        badge_type: badgeTypeValue && badgeTypeValue.trim() !== '' ? badgeTypeValue : null,
     }
 
     const { error } = await supabase.from('books').update(updates).eq('id', id)
@@ -103,5 +106,6 @@ export async function updateBook(id: string, formData: FormData) {
     }
 
     revalidatePath('/admin')
-    redirect('/admin')
+    revalidatePath(`/books/${id}`)
+    return { success: true }
 }

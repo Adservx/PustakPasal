@@ -19,7 +19,11 @@ export function MoodGrid() {
               Literature matched to your emotional landscape.
             </p>
           </div>
-          <Button variant="link" className="text-foreground gap-1.5 group text-xs sm:text-sm p-0 h-auto" onClick={() => router.push('/books')}>
+          <Button 
+            variant="outline" 
+            className="text-foreground gap-1.5 group text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 h-auto rounded-full border border-border hover:bg-secondary/50 transition-all duration-300" 
+            onClick={() => router.push('/books')}
+          >
             View all collections
             <ArrowRight className="w-3 sm:w-3.5 h-3 sm:h-3.5 group-hover:translate-x-1 transition-transform duration-300" />
           </Button>

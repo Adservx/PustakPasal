@@ -2,7 +2,7 @@
 
 import { memo, useState, useCallback } from "react"
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
-import { Book } from "@/lib/types"
+import { Book, BadgeType } from "@/lib/types"
 import { Star, Heart, ShoppingBag, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +10,16 @@ import { useWishlistStore } from "@/store/wishlist-store"
 import { useCartStore } from "@/store/cart-store"
 import Link from "next/link"
 import Image from "next/image"
+
+// Badge configuration
+const BADGE_CONFIG: Record<NonNullable<BadgeType>, { label: string; className: string }> = {
+    bestseller: { label: 'Bestseller', className: 'bg-amber-500/90 text-white' },
+    new: { label: 'New', className: 'bg-emerald-500/90 text-white' },
+    trending: { label: 'Trending', className: 'bg-rose-500/90 text-white' },
+    featured: { label: 'Featured', className: 'bg-violet-500/90 text-white' },
+    limited: { label: 'Limited', className: 'bg-slate-800/90 text-white' },
+    sale: { label: 'Sale', className: 'bg-red-600/90 text-white' },
+}
 
 // Helper to validate if a URL is properly formatted
 function isValidImageUrl(url: string | undefined | null): boolean {
@@ -150,9 +160,20 @@ export const AnimatedBookCard = memo(function AnimatedBookCard({ book, index = 0
 
                         {/* Badges */}
                         <div className="absolute top-1 left-1 sm:top-2 sm:left-2 flex flex-col gap-1">
-                            {book.isBestseller && (
-                                <Badge className="glass-card text-foreground border-none font-serif tracking-wide text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5">
+                            {book.badgeType && BADGE_CONFIG[book.badgeType] && (
+                                <Badge className={`${BADGE_CONFIG[book.badgeType].className} border-none font-serif tracking-wide text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 shadow-sm`}>
+                                    {BADGE_CONFIG[book.badgeType].label}
+                                </Badge>
+                            )}
+                            {/* Fallback to legacy badges if no badgeType is set */}
+                            {!book.badgeType && book.isBestseller && (
+                                <Badge className="bg-amber-500/90 text-white border-none font-serif tracking-wide text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 shadow-sm">
                                     Bestseller
+                                </Badge>
+                            )}
+                            {!book.badgeType && !book.isBestseller && book.isNew && (
+                                <Badge className="bg-emerald-500/90 text-white border-none font-serif tracking-wide text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 shadow-sm">
+                                    New
                                 </Badge>
                             )}
                         </div>
