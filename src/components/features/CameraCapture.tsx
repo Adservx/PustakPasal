@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Camera, X, RotateCcw, Check, SwitchCamera } from 'lucide-react'
 
@@ -16,7 +16,19 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
     const [capturedImage, setCapturedImage] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment')
-    const [isLoading, setIsLoading] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+
+    // Start camera immediately when component mounts
+    useEffect(() => {
+        startCamera()
+        return () => {
+            // Cleanup on unmount
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop())
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const startCamera = useCallback(async (facing: 'user' | 'environment' = facingMode) => {
         setIsLoading(true)
@@ -79,6 +91,7 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
 
     const retake = useCallback(() => {
         setCapturedImage(null)
+        setError(null)
         startCamera()
     }, [startCamera])
 
@@ -132,15 +145,6 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
                     />
                 ) : (
                     <>
-                        {!stream && !isLoading && (
-                            <div className="text-center">
-                                <Camera className="h-16 w-16 text-white/50 mx-auto mb-4" />
-                                <Button onClick={() => startCamera()} size="lg">
-                                    <Camera className="mr-2 h-5 w-5" />
-                                    Start Camera
-                                </Button>
-                            </div>
-                        )}
                         {isLoading && (
                             <div className="text-white">Starting camera...</div>
                         )}
@@ -195,6 +199,7 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
                             variant="outline"
                             size="icon"
                             className="bg-white/10 border-white/30 text-white hover:bg-white/20 h-12 w-12"
+                            title="Switch Camera"
                         >
                             <SwitchCamera className="h-5 w-5" />
                         </Button>

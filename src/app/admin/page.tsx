@@ -175,12 +175,18 @@ export default async function AdminPage() {
                                         {books?.map((book) => (
                                             <tr key={book.id} className="hover:bg-secondary/30 transition-colors">
                                                 <td className="p-4">
-                                                    <div className="relative w-12 h-16 rounded-lg overflow-hidden shadow-md">
-                                                        <img
-                                                            src={book.cover_url}
-                                                            alt={book.title}
-                                                            className="w-full h-full object-cover"
-                                                        />
+                                                    <div className="relative w-12 h-16 rounded-lg overflow-hidden shadow-md bg-muted">
+                                                        {book.cover_url ? (
+                                                            <img
+                                                                src={book.cover_url}
+                                                                alt={book.title}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">
+                                                                No Cover
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
@@ -225,12 +231,18 @@ export default async function AdminPage() {
                                 {books?.map((book) => (
                                     <div key={book.id} className="p-4 hover:bg-secondary/30 transition-colors">
                                         <div className="flex gap-4">
-                                            <div className="relative w-16 h-24 rounded-lg overflow-hidden shadow-md flex-shrink-0">
-                                                <img
-                                                    src={book.cover_url}
-                                                    alt={book.title}
-                                                    className="w-full h-full object-cover"
-                                                />
+                                            <div className="relative w-16 h-24 rounded-lg overflow-hidden shadow-md flex-shrink-0 bg-muted">
+                                                {book.cover_url ? (
+                                                    <img
+                                                        src={book.cover_url}
+                                                        alt={book.title}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                                                        No Cover
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="flex-1 min-w-0 space-y-2">
                                                 <div>

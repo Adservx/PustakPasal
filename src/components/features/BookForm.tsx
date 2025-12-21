@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -67,6 +67,7 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
     const [showCamera, setShowCamera] = useState(false)
     const [capturedImage, setCapturedImage] = useState<string | null>(null)
     const [coverUrlInput, setCoverUrlInput] = useState(initialData?.cover_url || '')
+    const galleryInputRef = useRef<HTMLInputElement>(null)
 
     // Sync state with initialData when it changes (important for edit mode)
     useEffect(() => {
@@ -102,6 +103,26 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
     const handleCameraCapture = (imageDataUrl: string) => {
         setCapturedImage(imageDataUrl)
         setCoverUrlInput('') // Clear URL input when using camera
+    }
+
+    const handleGallerySelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (!file) return
+
+        if (!file.type.startsWith('image/')) {
+            return
+        }
+
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            const imageDataUrl = e.target?.result as string
+            setCapturedImage(imageDataUrl)
+            setCoverUrlInput('')
+        }
+        reader.readAsDataURL(file)
+        
+        // Reset input so same file can be selected again
+        event.target.value = ''
     }
 
     const clearCapturedImage = () => {
@@ -232,18 +253,43 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
                     {/* Camera and URL Options */}
                     {!capturedImage && (
                         <div className="space-y-3">
-                            {/* Camera Capture Button */}
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setShowCamera(true)}
-                                className="w-full h-24 border-2 border-dashed border-accent/50 hover:border-accent hover:bg-accent/5 transition-all"
-                            >
-                                <div className="flex flex-col items-center gap-2">
-                                    <Camera className="h-8 w-8 text-accent" />
-                                    <span className="text-sm font-medium">Take Photo of Book Cover</span>
-                                </div>
-                            </Button>
+                            {/* Camera and Gallery Buttons */}
+                            <div className="grid grid-cols-2 gap-3">
+                                {/* Take Photo Button */}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setShowCamera(true)}
+                                    className="h-20 border-2 border-dashed border-accent/50 hover:border-accent hover:bg-accent/5 transition-all"
+                                >
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Camera className="h-6 w-6 text-accent" />
+                                        <span className="text-xs font-medium">Take Photo</span>
+                                    </div>
+                                </Button>
+                                
+                                {/* Choose from Gallery Button */}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => galleryInputRef.current?.click()}
+                                    className="h-20 border-2 border-dashed border-accent/50 hover:border-accent hover:bg-accent/5 transition-all"
+                                >
+                                    <div className="flex flex-col items-center gap-2">
+                                        <ImageIcon className="h-6 w-6 text-accent" />
+                                        <span className="text-xs font-medium">From Gallery</span>
+                                    </div>
+                                </Button>
+                            </div>
+                            
+                            {/* Hidden file input for gallery - outside modal */}
+                            <input
+                                ref={galleryInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleGallerySelect}
+                                className="hidden"
+                            />
                             
                             <div className="flex items-center gap-3">
                                 <div className="flex-1 h-px bg-border" />
