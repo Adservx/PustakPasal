@@ -4,6 +4,112 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+// Status Badge Types
+export interface StatusBadge {
+    id: string
+    name: string
+    label: string
+    emoji: string
+    color: string | null
+    is_default: boolean
+    created_at: string
+    updated_at: string
+}
+
+// Fetch all status badges
+export async function getStatusBadges(): Promise<StatusBadge[]> {
+    const supabase = await createClient()
+    
+    const { data, error } = await supabase
+        .from('status_badges')
+        .select('*')
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: true })
+    
+    if (error) {
+        console.error('Error fetching badges:', error)
+        return []
+    }
+    
+    return data || []
+}
+
+// Create a new status badge
+export async function createStatusBadge(formData: FormData): Promise<{ success: boolean; badge?: StatusBadge; error?: string }> {
+    const supabase = await createClient()
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'Unauthorized' }
+    
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'admin') return { success: false, error: 'Unauthorized' }
+    
+    const name = (formData.get('name') as string)?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+    const label = formData.get('label') as string
+    const emoji = formData.get('emoji') as string || '🏷️'
+    
+    if (!name || !label) {
+        return { success: false, error: 'Name and label are required' }
+    }
+    
+    const { data, error } = await supabase
+        .from('status_badges')
+        .insert({
+            name,
+            label,
+            emoji,
+            is_default: false
+        })
+        .select()
+        .single()
+    
+    if (error) {
+        if (error.code === '23505') {
+            return { success: false, error: 'A badge with this name already exists' }
+        }
+        console.error('Error creating badge:', error)
+        return { success: false, error: 'Failed to create badge' }
+    }
+    
+    revalidatePath('/admin')
+    return { success: true, badge: data }
+}
+
+// Delete a status badge (only non-default badges)
+export async function deleteStatusBadge(id: string): Promise<{ success: boolean; error?: string }> {
+    const supabase = await createClient()
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'Unauthorized' }
+    
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'admin') return { success: false, error: 'Unauthorized' }
+    
+    // Check if it's a default badge
+    const { data: badge } = await supabase
+        .from('status_badges')
+        .select('is_default')
+        .eq('id', id)
+        .single()
+    
+    if (badge?.is_default) {
+        return { success: false, error: 'Cannot delete default badges' }
+    }
+    
+    const { error } = await supabase
+        .from('status_badges')
+        .delete()
+        .eq('id', id)
+    
+    if (error) {
+        console.error('Error deleting badge:', error)
+        return { success: false, error: 'Failed to delete badge' }
+    }
+    
+    revalidatePath('/admin')
+    return { success: true }
+}
+
 export async function deleteBook(id: string) {
     const supabase = await createClient()
 

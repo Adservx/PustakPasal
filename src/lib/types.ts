@@ -1,4 +1,4 @@
-export type BadgeType = 'bestseller' | 'new' | 'trending' | 'featured' | 'limited' | 'sale' | null;
+export type BadgeType = string | null;
 
 export interface Book {
     id: string;

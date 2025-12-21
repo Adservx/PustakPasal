@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { GENRES, MOODS } from '@/lib/data'
-import { Loader2, Camera, Image as ImageIcon, X } from 'lucide-react'
-import { BadgeType } from '@/lib/types'
+import { Loader2, Camera, Image as ImageIcon, X, Plus, Trash2 } from 'lucide-react'
 import { CameraCapture } from './CameraCapture'
+import { getStatusBadges, createStatusBadge, deleteStatusBadge, StatusBadge } from '@/app/admin/actions'
 
 export interface BookFormData {
     title: string
@@ -26,7 +26,7 @@ export interface BookFormData {
     isbn: string
     is_bestseller: boolean
     is_new: boolean
-    badge_type: BadgeType
+    badge_type: string | null
     mood: string[]
 }
 
@@ -38,16 +38,6 @@ interface BookFormProps {
 }
 
 const FORMAT_OPTIONS = ['hardcover', 'paperback', 'ebook', 'audiobook']
-
-const BADGE_OPTIONS: { value: BadgeType; label: string; emoji: string }[] = [
-    { value: null, label: 'No Badge', emoji: '➖' },
-    { value: 'bestseller', label: 'Bestseller', emoji: '🏆' },
-    { value: 'new', label: 'New Release', emoji: '✨' },
-    { value: 'trending', label: 'Trending', emoji: '🔥' },
-    { value: 'featured', label: 'Featured', emoji: '⭐' },
-    { value: 'limited', label: 'Limited Edition', emoji: '💎' },
-    { value: 'sale', label: 'On Sale', emoji: '🏷️' },
-]
 
 export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormProps) {
     const [loading, setLoading] = useState(false)
@@ -63,11 +53,31 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
     )
     const [isBestseller, setIsBestseller] = useState(initialData?.is_bestseller || false)
     const [isNew, setIsNew] = useState(initialData?.is_new || false)
-    const [badgeType, setBadgeType] = useState<BadgeType>(initialData?.badge_type || null)
+    const [badgeType, setBadgeType] = useState<string | null>(initialData?.badge_type || null)
     const [showCamera, setShowCamera] = useState(false)
     const [capturedImage, setCapturedImage] = useState<string | null>(null)
     const [coverUrlInput, setCoverUrlInput] = useState(initialData?.cover_url || '')
     const galleryInputRef = useRef<HTMLInputElement>(null)
+    
+    // Status badges state
+    const [statusBadges, setStatusBadges] = useState<StatusBadge[]>([])
+    const [loadingBadges, setLoadingBadges] = useState(true)
+    const [showCreateBadge, setShowCreateBadge] = useState(false)
+    const [newBadgeLabel, setNewBadgeLabel] = useState('')
+    const [newBadgeEmoji, setNewBadgeEmoji] = useState('🏷️')
+    const [creatingBadge, setCreatingBadge] = useState(false)
+    const [badgeError, setBadgeError] = useState<string | null>(null)
+
+    // Fetch status badges on mount
+    useEffect(() => {
+        async function fetchBadges() {
+            setLoadingBadges(true)
+            const badges = await getStatusBadges()
+            setStatusBadges(badges)
+            setLoadingBadges(false)
+        }
+        fetchBadges()
+    }, [])
 
     // Sync state with initialData when it changes (important for edit mode)
     useEffect(() => {
@@ -81,6 +91,48 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
             setCoverUrlInput(initialData.cover_url || '')
         }
     }, [initialData])
+
+    const handleCreateBadge = async () => {
+        if (!newBadgeLabel.trim()) {
+            setBadgeError('Badge label is required')
+            return
+        }
+        
+        setCreatingBadge(true)
+        setBadgeError(null)
+        
+        const formData = new FormData()
+        formData.set('name', newBadgeLabel)
+        formData.set('label', newBadgeLabel)
+        formData.set('emoji', newBadgeEmoji)
+        
+        const result = await createStatusBadge(formData)
+        
+        if (result.success && result.badge) {
+            setStatusBadges(prev => [...prev, result.badge!])
+            setBadgeType(result.badge.name)
+            setNewBadgeLabel('')
+            setNewBadgeEmoji('🏷️')
+            setShowCreateBadge(false)
+        } else {
+            setBadgeError(result.error || 'Failed to create badge')
+        }
+        
+        setCreatingBadge(false)
+    }
+
+    const handleDeleteBadge = async (badge: StatusBadge) => {
+        if (badge.is_default) return
+        
+        const result = await deleteStatusBadge(badge.id)
+        
+        if (result.success) {
+            setStatusBadges(prev => prev.filter(b => b.id !== badge.id))
+            if (badgeType === badge.name) {
+                setBadgeType(null)
+            }
+        }
+    }
 
     const toggleFormat = (format: string) => {
         setSelectedFormats(prev =>
@@ -511,27 +563,136 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
                 {/* Badge Selection - Visual Buttons */}
                 <div>
                     <label className="block mb-3 text-sm font-medium">Select a badge to display on the book card</label>
-                    <div className="flex flex-wrap gap-2">
-                        {BADGE_OPTIONS.map(option => (
-                            <button
-                                key={option.value ?? 'none'}
-                                type="button"
-                                onClick={() => setBadgeType(option.value)}
-                                className={`px-3 py-2 rounded-lg text-sm border-2 transition-all duration-200 flex items-center gap-2 ${
-                                    badgeType === option.value
-                                        ? 'border-accent bg-accent/10 text-accent font-medium ring-2 ring-accent/20'
-                                        : 'border-border bg-secondary/30 hover:bg-secondary/50 hover:border-accent/50'
-                                }`}
-                            >
-                                <span className="text-base">{option.emoji}</span>
-                                <span>{option.label}</span>
-                            </button>
-                        ))}
-                    </div>
+                    
+                    {loadingBadges ? (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span className="text-sm">Loading badges...</span>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="flex flex-wrap gap-2">
+                                {/* No Badge Option */}
+                                <button
+                                    type="button"
+                                    onClick={() => setBadgeType(null)}
+                                    className={`px-3 py-2 rounded-lg text-sm border-2 transition-all duration-200 flex items-center gap-2 ${
+                                        badgeType === null
+                                            ? 'border-accent bg-accent/10 text-accent font-medium ring-2 ring-accent/20'
+                                            : 'border-border bg-secondary/30 hover:bg-secondary/50 hover:border-accent/50'
+                                    }`}
+                                >
+                                    <span className="text-base">➖</span>
+                                    <span>No Badge</span>
+                                </button>
+                                
+                                {/* Dynamic Badges from Database */}
+                                {statusBadges.map(badge => (
+                                    <div key={badge.id} className="relative group">
+                                        <button
+                                            type="button"
+                                            onClick={() => setBadgeType(badge.name)}
+                                            className={`px-3 py-2 rounded-lg text-sm border-2 transition-all duration-200 flex items-center gap-2 ${
+                                                badgeType === badge.name
+                                                    ? 'border-accent bg-accent/10 text-accent font-medium ring-2 ring-accent/20'
+                                                    : 'border-border bg-secondary/30 hover:bg-secondary/50 hover:border-accent/50'
+                                            }`}
+                                        >
+                                            <span className="text-base">{badge.emoji}</span>
+                                            <span>{badge.label}</span>
+                                        </button>
+                                        {/* Delete button for custom badges */}
+                                        {!badge.is_default && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    handleDeleteBadge(badge)
+                                                }}
+                                                className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/90"
+                                                title="Delete badge"
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                                
+                                {/* Create New Badge Button */}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCreateBadge(true)}
+                                    className="px-3 py-2 rounded-lg text-sm border-2 border-dashed border-accent/50 hover:border-accent hover:bg-accent/5 transition-all duration-200 flex items-center gap-2 text-accent"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    <span>New Badge</span>
+                                </button>
+                            </div>
+                            
+                            {/* Create Badge Form */}
+                            {showCreateBadge && (
+                                <div className="mt-4 p-4 rounded-lg border border-accent/30 bg-accent/5">
+                                    <h4 className="text-sm font-medium mb-3">Create New Badge</h4>
+                                    <div className="flex gap-2 items-end">
+                                        <div className="flex-1">
+                                            <label className="block text-xs text-muted-foreground mb-1">Label</label>
+                                            <Input
+                                                value={newBadgeLabel}
+                                                onChange={(e) => setNewBadgeLabel(e.target.value)}
+                                                placeholder="e.g., Staff Pick"
+                                                className="h-9"
+                                            />
+                                        </div>
+                                        <div className="w-20">
+                                            <label className="block text-xs text-muted-foreground mb-1">Emoji</label>
+                                            <Input
+                                                value={newBadgeEmoji}
+                                                onChange={(e) => setNewBadgeEmoji(e.target.value)}
+                                                placeholder="🏷️"
+                                                className="h-9 text-center"
+                                                maxLength={2}
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            onClick={handleCreateBadge}
+                                            disabled={creatingBadge || !newBadgeLabel.trim()}
+                                            size="sm"
+                                            className="h-9"
+                                        >
+                                            {creatingBadge ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                'Add'
+                                            )}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                setShowCreateBadge(false)
+                                                setNewBadgeLabel('')
+                                                setNewBadgeEmoji('🏷️')
+                                                setBadgeError(null)
+                                            }}
+                                            className="h-9"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    {badgeError && (
+                                        <p className="text-destructive text-xs mt-2">{badgeError}</p>
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    )}
+                    
                     {badgeType && (
                         <div className="mt-3 p-3 rounded-lg bg-accent/5 border border-accent/20">
                             <p className="text-sm text-accent font-medium">
-                                ✓ Badge "{BADGE_OPTIONS.find(o => o.value === badgeType)?.label}" will be displayed on this book
+                                ✓ Badge &quot;{statusBadges.find(b => b.name === badgeType)?.label || badgeType}&quot; will be displayed on this book
                             </p>
                             <button
                                 type="button"

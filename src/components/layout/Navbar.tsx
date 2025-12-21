@@ -10,11 +10,17 @@ import { ModeToggle } from "@/components/mode-toggle"
 import { CartDrawer } from "@/components/features/CartDrawer"
 import { UserProfileModal } from "@/components/features/UserProfileModal"
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "framer-motion"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useWishlistStore } from "@/store/wishlist-store"
 import { useCartStore } from "@/store/cart-store"
 import { createClient } from "@/lib/supabase/client"
+
+interface BookSuggestion {
+    id: string
+    title: string
+    author: string
+}
 
 export function Navbar() {
     const router = useRouter()
@@ -25,12 +31,70 @@ export function Navbar() {
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+    const [suggestions, setSuggestions] = useState<BookSuggestion[]>([])
+    const [selectedIndex, setSelectedIndex] = useState(-1)
+    const [showSuggestions, setShowSuggestions] = useState(false)
+    const [allBooks, setAllBooks] = useState<BookSuggestion[]>([])
+    const suggestionsRef = useRef<HTMLDivElement>(null)
     const { bookIds } = useWishlistStore()
     const { getTotalItems } = useCartStore()
     const { scrollY } = useScroll()
     const [user, setUser] = useState<any>(null)
     const [isAdmin, setIsAdmin] = useState(false)
     const supabase = createClient()
+
+    // Fetch all book titles for suggestions
+    useEffect(() => {
+        const fetchBooks = async () => {
+            const { data, error } = await supabase
+                .from('books')
+                .select('id, title, author')
+                .order('title')
+            
+            if (!error && data) {
+                setAllBooks(data.map(book => ({
+                    id: book.id,
+                    title: book.title,
+                    author: book.author
+                })))
+            }
+        }
+        fetchBooks()
+    }, [])
+
+    // Filter suggestions based on search query
+    const filterSuggestions = useCallback((query: string) => {
+        if (!query.trim()) {
+            setSuggestions([])
+            setShowSuggestions(false)
+            return
+        }
+
+        const lowerQuery = query.toLowerCase()
+        const filtered = allBooks
+            .filter(book => 
+                book.title.toLowerCase().includes(lowerQuery) ||
+                book.author.toLowerCase().includes(lowerQuery)
+            )
+            .slice(0, 8) // Limit to 8 suggestions
+
+        // Remove duplicates by title
+        const uniqueSuggestions = filtered.reduce((acc, book) => {
+            if (!acc.find(b => b.title.toLowerCase() === book.title.toLowerCase())) {
+                acc.push(book)
+            }
+            return acc
+        }, [] as BookSuggestion[])
+
+        setSuggestions(uniqueSuggestions)
+        setShowSuggestions(uniqueSuggestions.length > 0)
+        setSelectedIndex(-1)
+    }, [allBooks])
+
+    // Update suggestions when search query changes
+    useEffect(() => {
+        filterSuggestions(searchQuery)
+    }, [searchQuery, filterSuggestions])
 
     useEffect(() => {
         const getUser = async () => {
@@ -97,12 +161,47 @@ export function Navbar() {
     })
 
     const handleSearch = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && searchQuery.trim()) {
-            router.push(`/books?search=${encodeURIComponent(searchQuery)}`)
-            setSearchQuery("")
-            setIsSearchOpen(false)
-            setIsMobileMenuOpen(false)
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setSelectedIndex(prev => 
+                prev < suggestions.length - 1 ? prev + 1 : prev
+            )
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setSelectedIndex(prev => prev > 0 ? prev - 1 : -1)
+        } else if (e.key === 'Enter') {
+            e.preventDefault()
+            if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+                // Navigate to selected suggestion
+                const selected = suggestions[selectedIndex]
+                router.push(`/books?search=${encodeURIComponent(selected.title)}`)
+                setSearchQuery("")
+                setIsSearchOpen(false)
+                setIsMobileMenuOpen(false)
+                setShowSuggestions(false)
+            } else if (searchQuery.trim()) {
+                router.push(`/books?search=${encodeURIComponent(searchQuery)}`)
+                setSearchQuery("")
+                setIsSearchOpen(false)
+                setIsMobileMenuOpen(false)
+                setShowSuggestions(false)
+            }
+        } else if (e.key === 'Escape') {
+            setShowSuggestions(false)
+            setSelectedIndex(-1)
         }
+    }
+
+    const handleSuggestionClick = (suggestion: BookSuggestion) => {
+        router.push(`/books?search=${encodeURIComponent(suggestion.title)}`)
+        setSearchQuery("")
+        setIsSearchOpen(false)
+        setIsMobileMenuOpen(false)
+        setShowSuggestions(false)
+    }
+
+    const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value)
     }
 
     return (
@@ -283,25 +382,69 @@ export function Navbar() {
                     >
                         <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border p-3 md:w-full md:max-w-xl">
                             <div className="relative flex items-center gap-2">
-                                <Search className="absolute left-4 text-muted-foreground h-4 w-4 md:h-5 md:w-5" />
+                                <Search className="absolute left-4 text-muted-foreground h-4 w-4 md:h-5 md:w-5 z-10" />
                                 <Input
                                     type="search"
                                     placeholder="Search books..."
                                     className="h-11 md:h-12 pl-10 md:pl-12 pr-4 bg-secondary/50 border-border rounded-xl focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-accent/50 w-full"
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onChange={handleSearchInputChange}
                                     onKeyDown={handleSearch}
+                                    onFocus={() => searchQuery && setShowSuggestions(suggestions.length > 0)}
                                     autoFocus
                                 />
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     className="h-9 w-9 md:h-10 md:w-10 rounded-full shrink-0 hover:bg-secondary"
-                                    onClick={() => setIsSearchOpen(false)}
+                                    onClick={() => {
+                                        setIsSearchOpen(false)
+                                        setShowSuggestions(false)
+                                    }}
                                 >
                                     <X className="h-4 w-4" />
                                 </Button>
                             </div>
+                            
+                            {/* Search Suggestions */}
+                            <AnimatePresence>
+                                {showSuggestions && suggestions.length > 0 && (
+                                    <motion.div
+                                        ref={suggestionsRef}
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="mt-2 bg-background/95 backdrop-blur-xl rounded-xl border border-border overflow-hidden"
+                                    >
+                                        <div className="py-1">
+                                            {suggestions.map((suggestion, index) => (
+                                                <button
+                                                    key={suggestion.id}
+                                                    className={`w-full px-4 py-2.5 text-left flex items-center gap-3 transition-colors ${
+                                                        index === selectedIndex 
+                                                            ? 'bg-primary/10 text-primary' 
+                                                            : 'hover:bg-secondary/50'
+                                                    }`}
+                                                    onClick={() => handleSuggestionClick(suggestion)}
+                                                    onMouseEnter={() => setSelectedIndex(index)}
+                                                >
+                                                    <BookOpen className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-medium text-sm truncate">{suggestion.title}</p>
+                                                        <p className="text-xs text-muted-foreground truncate">by {suggestion.author}</p>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="px-4 py-2 border-t border-border bg-secondary/30">
+                                            <p className="text-xs text-muted-foreground">
+                                                Use <kbd className="px-1.5 py-0.5 bg-background rounded text-[10px] font-mono">↑</kbd> <kbd className="px-1.5 py-0.5 bg-background rounded text-[10px] font-mono">↓</kbd> to navigate, <kbd className="px-1.5 py-0.5 bg-background rounded text-[10px] font-mono">Enter</kbd> to select
+                                            </p>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </motion.div>
                 )}
@@ -361,15 +504,50 @@ export function Navbar() {
 
                                 {/* Search */}
                                 <div className="relative">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5 z-10" />
                                     <Input
                                         type="search"
                                         placeholder="Search books..."
                                         className="h-12 pl-12 pr-4 bg-secondary/50 border-border rounded-full focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-accent/50"
                                         value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onChange={handleSearchInputChange}
                                         onKeyDown={handleSearch}
+                                        onFocus={() => searchQuery && setShowSuggestions(suggestions.length > 0)}
                                     />
+                                    
+                                    {/* Mobile Search Suggestions */}
+                                    <AnimatePresence>
+                                        {showSuggestions && suggestions.length > 0 && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                transition={{ duration: 0.15 }}
+                                                className="absolute top-full left-0 right-0 mt-2 bg-background/95 backdrop-blur-xl rounded-xl border border-border overflow-hidden shadow-lg z-50"
+                                            >
+                                                <div className="py-1 max-h-64 overflow-y-auto">
+                                                    {suggestions.map((suggestion, index) => (
+                                                        <button
+                                                            key={suggestion.id}
+                                                            className={`w-full px-4 py-2.5 text-left flex items-center gap-3 transition-colors ${
+                                                                index === selectedIndex 
+                                                                    ? 'bg-primary/10 text-primary' 
+                                                                    : 'hover:bg-secondary/50'
+                                                            }`}
+                                                            onClick={() => handleSuggestionClick(suggestion)}
+                                                            onMouseEnter={() => setSelectedIndex(index)}
+                                                        >
+                                                            <BookOpen className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-medium text-sm truncate">{suggestion.title}</p>
+                                                                <p className="text-xs text-muted-foreground truncate">by {suggestion.author}</p>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
 
                                 {/* Navigation Links */}

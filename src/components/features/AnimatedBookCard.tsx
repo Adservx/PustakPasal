@@ -1,6 +1,6 @@
 "use client"
 
-import { memo, useState, useCallback } from "react"
+import { memo, useState, useCallback, useEffect } from "react"
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 import { Book, BadgeType } from "@/lib/types"
 import { Star, Heart, ShoppingBag, BookOpen } from "lucide-react"
@@ -10,15 +10,64 @@ import { useWishlistStore } from "@/store/wishlist-store"
 import { useCartStore } from "@/store/cart-store"
 import Link from "next/link"
 import Image from "next/image"
+import { createClient } from "@/lib/supabase/client"
 
-// Badge configuration
-const BADGE_CONFIG: Record<NonNullable<BadgeType>, { label: string; className: string }> = {
-    bestseller: { label: 'Bestseller', className: 'bg-amber-500/90 text-white' },
-    new: { label: 'New', className: 'bg-emerald-500/90 text-white' },
-    trending: { label: 'Trending', className: 'bg-rose-500/90 text-white' },
-    featured: { label: 'Featured', className: 'bg-violet-500/90 text-white' },
-    limited: { label: 'Limited', className: 'bg-slate-800/90 text-white' },
-    sale: { label: 'Sale', className: 'bg-red-600/90 text-white' },
+// Default badge configuration for known badges
+const DEFAULT_BADGE_CONFIG: Record<string, { label: string; className: string; emoji: string }> = {
+    bestseller: { label: 'Bestseller', className: 'bg-amber-500/90 text-white', emoji: '🏆' },
+    new: { label: 'New', className: 'bg-emerald-500/90 text-white', emoji: '✨' },
+    trending: { label: 'Trending', className: 'bg-rose-500/90 text-white', emoji: '🔥' },
+    featured: { label: 'Featured', className: 'bg-violet-500/90 text-white', emoji: '⭐' },
+    limited: { label: 'Limited', className: 'bg-slate-800/90 text-white', emoji: '💎' },
+    sale: { label: 'Sale', className: 'bg-red-600/90 text-white', emoji: '🏷️' },
+}
+
+// Cache for custom badges
+let badgeCache: Record<string, { label: string; emoji: string }> | null = null
+let badgeCachePromise: Promise<void> | null = null
+
+async function loadBadgeCache() {
+    if (badgeCache !== null) return
+    if (badgeCachePromise) {
+        await badgeCachePromise
+        return
+    }
+    
+    badgeCachePromise = (async () => {
+        const supabase = createClient()
+        const { data } = await supabase.from('status_badges').select('name, label, emoji')
+        badgeCache = {}
+        if (data) {
+            data.forEach(badge => {
+                badgeCache![badge.name] = { label: badge.label, emoji: badge.emoji }
+            })
+        }
+    })()
+    
+    await badgeCachePromise
+}
+
+function getBadgeConfig(badgeType: string): { label: string; className: string; emoji: string } | null {
+    // Check default config first
+    if (DEFAULT_BADGE_CONFIG[badgeType]) {
+        return DEFAULT_BADGE_CONFIG[badgeType]
+    }
+    
+    // Check cache for custom badges
+    if (badgeCache && badgeCache[badgeType]) {
+        return {
+            label: badgeCache[badgeType].label,
+            emoji: badgeCache[badgeType].emoji,
+            className: 'bg-accent/90 text-white' // Default style for custom badges
+        }
+    }
+    
+    // Return a generic badge if not found
+    return {
+        label: badgeType.charAt(0).toUpperCase() + badgeType.slice(1).replace(/_/g, ' '),
+        emoji: '🏷️',
+        className: 'bg-accent/90 text-white'
+    }
 }
 
 // Helper to validate if a URL is properly formatted
@@ -43,8 +92,16 @@ interface AnimatedBookCardProps {
 export const AnimatedBookCard = memo(function AnimatedBookCard({ book, index = 0 }: AnimatedBookCardProps) {
     const [isHovered, setIsHovered] = useState(false)
     const [imageError, setImageError] = useState(false)
+    const [badgesLoaded, setBadgesLoaded] = useState(badgeCache !== null)
     const { toggleWishlist, isInWishlist } = useWishlistStore()
     const { addItem } = useCartStore()
+
+    // Load badge cache on mount
+    useEffect(() => {
+        if (!badgesLoaded) {
+            loadBadgeCache().then(() => setBadgesLoaded(true))
+        }
+    }, [badgesLoaded])
 
     // Validate cover URL
     const hasValidCover = isValidImageUrl(book.coverUrl)
@@ -159,11 +216,14 @@ export const AnimatedBookCard = memo(function AnimatedBookCard({ book, index = 0
 
                         {/* Badges */}
                         <div className="absolute top-1 left-1 sm:top-2 sm:left-2 flex flex-col gap-1">
-                            {book.badgeType && BADGE_CONFIG[book.badgeType] && (
-                                <Badge className={`${BADGE_CONFIG[book.badgeType].className} border-none font-serif tracking-wide text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 shadow-sm`}>
-                                    {BADGE_CONFIG[book.badgeType].label}
-                                </Badge>
-                            )}
+                            {book.badgeType && (() => {
+                                const config = getBadgeConfig(book.badgeType)
+                                return config ? (
+                                    <Badge className={`${config.className} border-none font-serif tracking-wide text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 shadow-sm`}>
+                                        {config.label}
+                                    </Badge>
+                                ) : null
+                            })()}
                             {/* Fallback to legacy badges if no badgeType is set */}
                             {!book.badgeType && book.isBestseller && (
                                 <Badge className="bg-amber-500/90 text-white border-none font-serif tracking-wide text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 shadow-sm">
