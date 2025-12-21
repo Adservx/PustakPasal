@@ -21,14 +21,14 @@ import {
 import { Order, OrderStatus, getAllOrders, ORDER_STAGES, updateOrderStatus } from "@/lib/orders"
 
 const statusColors: Record<OrderStatus, string> = {
-    pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-    confirmed: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    collecting: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
-    packing: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-    shipping: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
-    out_for_delivery: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-    delivered: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-    cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    pending: "bg-yellow-500 text-white",
+    confirmed: "bg-blue-500 text-white",
+    collecting: "bg-indigo-500 text-white",
+    packing: "bg-purple-500 text-white",
+    shipping: "bg-cyan-500 text-white",
+    out_for_delivery: "bg-orange-500 text-white",
+    delivered: "bg-green-500 text-white",
+    cancelled: "bg-red-500 text-white",
 }
 
 export default function AdminOrdersPage() {
@@ -39,6 +39,7 @@ export default function AdminOrdersPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState<string>("all")
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+    const [pendingStatusChange, setPendingStatusChange] = useState<{ orderId: string; newStatus: OrderStatus } | null>(null)
     const router = useRouter()
     const supabase = createClient()
 
@@ -99,14 +100,29 @@ export default function AdminOrdersPage() {
     }
 
     const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
+        // If clicking on the same status, do nothing
+        if (selectedOrder?.status === newStatus) return
+        
+        // Show confirmation dialog
+        setPendingStatusChange({ orderId, newStatus })
+    }
+
+    const confirmStatusUpdate = async () => {
+        if (!pendingStatusChange) return
+        
+        const { orderId, newStatus } = pendingStatusChange
         const success = await updateOrderStatus(orderId, newStatus)
         if (success) {
             fetchOrders()
             if (selectedOrder?.id === orderId) {
-                const updated = orders.find((o) => o.id === orderId)
-                if (updated) setSelectedOrder({ ...updated, status: newStatus })
+                setSelectedOrder({ ...selectedOrder, status: newStatus })
             }
         }
+        setPendingStatusChange(null)
+    }
+
+    const cancelStatusUpdate = () => {
+        setPendingStatusChange(null)
     }
 
     if (loading) {
@@ -218,11 +234,11 @@ export default function AdminOrdersPage() {
             {/* Order Detail Modal */}
             {selectedOrder && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-                    <div className="bg-card rounded-2xl border shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto my-8">
-                        <div className="sticky top-0 bg-card border-b p-4 flex items-center justify-between">
+                    <div className="bg-white rounded-2xl border shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto my-8">
+                        <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
                             <div>
-                                <p className="font-mono font-bold text-lg">{selectedOrder.tracking_number}</p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="font-mono font-bold text-lg text-gray-900">{selectedOrder.tracking_number}</p>
+                                <p className="text-sm text-gray-500">
                                     {new Date(selectedOrder.created_at).toLocaleString()}
                                 </p>
                             </div>
@@ -232,10 +248,11 @@ export default function AdminOrdersPage() {
                         </div>
 
                         <div className="p-6 space-y-6">
-                            {/* Status Update */}
-                            {selectedOrder.status !== "cancelled" && selectedOrder.status !== "delivered" && (
+                            {/* Status Update - Show for all orders except cancelled */}
+                            {selectedOrder.status !== "cancelled" && (
                                 <div>
-                                    <label className="text-sm font-medium mb-2 block">Update Status</label>
+                                    <label className="text-sm font-medium mb-2 block text-gray-700">Update Status</label>
+                                    <p className="text-xs text-gray-500 mb-3">Mistakenly touched? You can change the status anytime.</p>
                                     <div className="flex flex-wrap gap-2">
                                         {ORDER_STAGES.map((stage) => (
                                             <Button
@@ -243,7 +260,7 @@ export default function AdminOrdersPage() {
                                                 size="sm"
                                                 variant={selectedOrder.status === stage.status ? "default" : "outline"}
                                                 onClick={() => handleStatusUpdate(selectedOrder.id, stage.status)}
-                                                className="text-xs"
+                                                className={`text-xs ${selectedOrder.status === stage.status ? "bg-green-600 hover:bg-green-700 text-white border-green-600" : ""}`}
                                             >
                                                 {stage.label}
                                             </Button>
@@ -267,57 +284,57 @@ export default function AdminOrdersPage() {
 
                             {/* Customer Info */}
                             <div>
-                                <h4 className="font-semibold mb-3">Customer Details</h4>
+                                <h4 className="font-semibold mb-3 text-gray-900">Customer Details</h4>
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
-                                        <p className="text-muted-foreground">Name</p>
-                                        <p className="font-medium">{selectedOrder.customer_name}</p>
+                                        <p className="text-gray-500">Name</p>
+                                        <p className="font-medium text-gray-900">{selectedOrder.customer_name}</p>
                                     </div>
                                     <div>
-                                        <p className="text-muted-foreground">Email</p>
-                                        <p className="font-medium">{selectedOrder.customer_email}</p>
+                                        <p className="text-gray-500">Email</p>
+                                        <p className="font-medium text-gray-900">{selectedOrder.customer_email}</p>
                                     </div>
                                     {selectedOrder.customer_phone && (
                                         <div>
-                                            <p className="text-muted-foreground">Phone</p>
-                                            <p className="font-medium">{selectedOrder.customer_phone}</p>
+                                            <p className="text-gray-500">Phone</p>
+                                            <p className="font-medium text-gray-900">{selectedOrder.customer_phone}</p>
                                         </div>
                                     )}
                                     <div className="col-span-2">
-                                        <p className="text-muted-foreground">Address</p>
-                                        <p className="font-medium">{selectedOrder.shipping_address}</p>
+                                        <p className="text-gray-500">Address</p>
+                                        <p className="font-medium text-gray-900">{selectedOrder.shipping_address}</p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Items */}
                             <div>
-                                <h4 className="font-semibold mb-3">Order Items</h4>
+                                <h4 className="font-semibold mb-3 text-gray-900">Order Items</h4>
                                 <div className="space-y-2">
                                     {selectedOrder.items.map((item, i) => (
-                                        <div key={i} className="flex justify-between p-3 bg-secondary/30 rounded-lg text-sm">
+                                        <div key={i} className="flex justify-between p-3 bg-gray-50 rounded-lg text-sm">
                                             <div>
-                                                <p className="font-medium">{item.title}</p>
-                                                <p className="text-muted-foreground">
+                                                <p className="font-medium text-gray-900">{item.title}</p>
+                                                <p className="text-gray-500">
                                                     {item.format} × {item.quantity}
                                                 </p>
                                             </div>
-                                            <p className="font-medium">NRS {item.price * item.quantity}</p>
+                                            <p className="font-medium text-gray-900">NRS {item.price * item.quantity}</p>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="mt-4 pt-4 border-t space-y-1 text-sm">
+                                <div className="mt-4 pt-4 border-t border-gray-200 space-y-1 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Subtotal</span>
-                                        <span>NRS {selectedOrder.subtotal}</span>
+                                        <span className="text-gray-500">Subtotal</span>
+                                        <span className="text-gray-900">NRS {selectedOrder.subtotal}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Shipping</span>
-                                        <span>{selectedOrder.shipping_cost > 0 ? `NRS ${selectedOrder.shipping_cost}` : "Free"}</span>
+                                        <span className="text-gray-500">Shipping</span>
+                                        <span className="text-gray-900">{selectedOrder.shipping_cost > 0 ? `NRS ${selectedOrder.shipping_cost}` : "Free"}</span>
                                     </div>
-                                    <div className="flex justify-between font-semibold text-base pt-2 border-t">
-                                        <span>Total</span>
-                                        <span>NRS {selectedOrder.total}</span>
+                                    <div className="flex justify-between font-semibold text-base pt-2 border-t border-gray-200">
+                                        <span className="text-gray-900">Total</span>
+                                        <span className="text-gray-900">NRS {selectedOrder.total}</span>
                                     </div>
                                 </div>
                             </div>
@@ -325,21 +342,57 @@ export default function AdminOrdersPage() {
                             {/* Status History */}
                             {selectedOrder.status_history && selectedOrder.status_history.length > 0 && (
                                 <div>
-                                    <h4 className="font-semibold mb-3">Status History</h4>
+                                    <h4 className="font-semibold mb-3 text-gray-900">Status History</h4>
                                     <div className="space-y-2">
                                         {selectedOrder.status_history.map((entry, i) => (
                                             <div key={i} className="flex items-center gap-3 text-sm">
                                                 <div className="h-2 w-2 rounded-full bg-primary" />
-                                                <span className="capitalize font-medium">{entry.status.replace(/_/g, " ")}</span>
-                                                <span className="text-muted-foreground">
+                                                <span className="capitalize font-medium text-gray-900">{entry.status.replace(/_/g, " ")}</span>
+                                                <span className="text-gray-500">
                                                     {new Date(entry.timestamp).toLocaleString()}
                                                 </span>
-                                                {entry.note && <span className="text-muted-foreground">- {entry.note}</span>}
+                                                {entry.note && <span className="text-gray-500">- {entry.note}</span>}
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Status Change Confirmation Modal */}
+            {pendingStatusChange && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl border shadow-2xl max-w-md w-full p-6">
+                        <div className="text-center mb-6">
+                            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
+                                <Package className="h-6 w-6 text-blue-600" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Status Change</h3>
+                            <p className="text-gray-500 text-sm">
+                                Are you sure you want to change the order status to{" "}
+                                <span className="font-semibold text-gray-900">
+                                    {ORDER_STAGES.find((s) => s.status === pendingStatusChange.newStatus)?.label}
+                                </span>
+                                ?
+                            </p>
+                        </div>
+                        <div className="flex gap-3">
+                            <Button
+                                variant="outline"
+                                className="flex-1"
+                                onClick={cancelStatusUpdate}
+                            >
+                                No, Cancel
+                            </Button>
+                            <Button
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                onClick={confirmStatusUpdate}
+                            >
+                                Yes, Change Status
+                            </Button>
                         </div>
                     </div>
                 </div>

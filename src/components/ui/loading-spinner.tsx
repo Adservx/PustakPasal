@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
+import Image from "next/image"
 
 interface LoadingSpinnerProps {
     size?: "sm" | "md" | "lg" | "xl"
@@ -72,25 +73,43 @@ export function PageLoader({ text = "Loading..." }: { text?: string }) {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col items-center gap-6"
             >
-                {/* Logo */}
-                <motion.div
-                    className="h-16 w-16 rounded-2xl bg-gradient-to-br from-foreground to-foreground/80 text-background flex items-center justify-center font-serif font-bold text-3xl shadow-2xl"
-                    animate={{
-                        scale: [1, 1.05, 1],
-                    }}
-                    transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                    }}
-                >
-                    H
-                </motion.div>
+                {/* Logo with spinning border */}
+                <div className="relative">
+                    <motion.div
+                        className="h-20 w-20 rounded-2xl overflow-hidden shadow-2xl"
+                        animate={{
+                            scale: [1, 1.05, 1],
+                        }}
+                        transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                    >
+                        <Image
+                            src="/logo.jpeg"
+                            alt="Hamro Pustak Pasal"
+                            width={80}
+                            height={80}
+                            className="h-full w-full object-cover"
+                            priority
+                        />
+                    </motion.div>
+                    <motion.div
+                        className="absolute -inset-3 border-[3px] border-primary/20 border-t-primary rounded-3xl"
+                        animate={{ rotate: 360 }}
+                        transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "linear"
+                        }}
+                    />
+                </div>
 
                 {/* Loading bar */}
                 <div className="w-48 h-1 bg-secondary rounded-full overflow-hidden">
                     <motion.div
-                        className="h-full bg-foreground rounded-full"
+                        className="h-full bg-primary rounded-full"
                         initial={{ x: "-100%" }}
                         animate={{ x: "100%" }}
                         transition={{
@@ -114,23 +133,43 @@ export function PageLoader({ text = "Loading..." }: { text?: string }) {
     )
 }
 
-export function BookCardSkeleton() {
+export function BookCardSkeleton({ index = 0 }: { index?: number }) {
     return (
-        <div className="space-y-4">
-            <div className="aspect-[2/3] bg-secondary/50 rounded-xl animate-pulse" />
-            <div className="space-y-2">
-                <div className="h-5 w-3/4 bg-secondary/50 rounded animate-pulse" />
-                <div className="h-3 w-1/2 bg-secondary/30 rounded animate-pulse" />
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, duration: 0.3 }}
+            className="space-y-3 sm:space-y-4"
+        >
+            <div className="relative aspect-[2/3] bg-secondary/50 rounded-lg sm:rounded-xl overflow-hidden">
+                <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                    animate={{ x: ["-100%", "100%"] }}
+                    transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: index * 0.1
+                    }}
+                />
             </div>
-        </div>
+            <div className="space-y-2">
+                <div className="h-4 sm:h-5 w-3/4 bg-secondary/50 rounded animate-pulse" />
+                <div className="h-3 w-1/2 bg-secondary/30 rounded animate-pulse" />
+                <div className="flex items-center gap-2 pt-1">
+                    <div className="h-3 w-12 bg-secondary/40 rounded animate-pulse" />
+                    <div className="h-4 w-16 bg-secondary/50 rounded animate-pulse" />
+                </div>
+            </div>
+        </motion.div>
     )
 }
 
 export function BookGridSkeleton({ count = 8 }: { count?: number }) {
     return (
-        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 md:gap-x-8 gap-y-8 sm:gap-y-10 md:gap-y-12">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
             {[...Array(count)].map((_, i) => (
-                <BookCardSkeleton key={i} />
+                <BookCardSkeleton key={i} index={i} />
             ))}
         </div>
     )

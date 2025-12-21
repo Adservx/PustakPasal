@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { deleteBook } from './actions'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Edit, Trash2, BookOpen, DollarSign, TrendingUp, Users, Package } from 'lucide-react'
+import { Plus, Edit, Trash2, BookOpen, DollarSign, TrendingUp, Settings, Package } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -103,7 +103,7 @@ export default async function AdminPage() {
                         </Link>
                         <Link href="/admin/settings">
                             <Button variant="outline" className="gap-2">
-                                <Users className="w-4 h-4" />
+                                <Settings className="w-4 h-4" />
                                 <span className="hidden sm:inline">Settings</span>
                             </Button>
                         </Link>

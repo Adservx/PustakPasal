@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { GENRES, MOODS } from '@/lib/data'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Camera, Image as ImageIcon, X } from 'lucide-react'
 import { BadgeType } from '@/lib/types'
+import { CameraCapture } from './CameraCapture'
 
 export interface BookFormData {
     title: string
@@ -63,6 +64,22 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
     const [isBestseller, setIsBestseller] = useState(initialData?.is_bestseller || false)
     const [isNew, setIsNew] = useState(initialData?.is_new || false)
     const [badgeType, setBadgeType] = useState<BadgeType>(initialData?.badge_type || null)
+    const [showCamera, setShowCamera] = useState(false)
+    const [capturedImage, setCapturedImage] = useState<string | null>(null)
+    const [coverUrlInput, setCoverUrlInput] = useState(initialData?.cover_url || '')
+
+    // Sync state with initialData when it changes (important for edit mode)
+    useEffect(() => {
+        if (initialData) {
+            setSelectedFormats(initialData.formats || ['paperback'])
+            setSelectedGenres(initialData.genres || [])
+            setSelectedMoods(initialData.mood || [])
+            setIsBestseller(initialData.is_bestseller || false)
+            setIsNew(initialData.is_new || false)
+            setBadgeType(initialData.badge_type || null)
+            setCoverUrlInput(initialData.cover_url || '')
+        }
+    }, [initialData])
 
     const toggleFormat = (format: string) => {
         setSelectedFormats(prev =>
@@ -80,6 +97,15 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
         setSelectedMoods(prev =>
             prev.includes(mood) ? prev.filter(m => m !== mood) : [...prev, mood]
         )
+    }
+
+    const handleCameraCapture = (imageDataUrl: string) => {
+        setCapturedImage(imageDataUrl)
+        setCoverUrlInput('') // Clear URL input when using camera
+    }
+
+    const clearCapturedImage = () => {
+        setCapturedImage(null)
     }
 
     const validateForm = (formData: FormData): boolean => {
@@ -113,6 +139,11 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
         formData.set('is_bestseller', String(isBestseller))
         formData.set('is_new', String(isNew))
         formData.set('badge_type', badgeType || '')
+        
+        // Handle captured image - if we have a captured image, include it
+        if (capturedImage) {
+            formData.set('captured_image', capturedImage)
+        }
         
         if (!validateForm(formData)) {
             return
@@ -173,14 +204,83 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
                     />
                 </div>
                 
-                <div>
-                    <label className="block mb-1 text-sm font-medium">Cover URL</label>
-                    <Input
-                        name="cover_url"
-                        type="url"
-                        defaultValue={initialData?.cover_url}
-                        placeholder="https://..."
-                    />
+                {/* Book Cover Section */}
+                <div className="space-y-3">
+                    <label className="block text-sm font-medium">Book Cover</label>
+                    
+                    {/* Captured Image Preview */}
+                    {capturedImage && (
+                        <div className="relative inline-block">
+                            <img
+                                src={capturedImage}
+                                alt="Captured book cover"
+                                className="w-40 h-56 object-cover rounded-lg border-2 border-accent shadow-lg"
+                            />
+                            <button
+                                type="button"
+                                onClick={clearCapturedImage}
+                                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 transition-colors"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                            <p className="text-xs text-muted-foreground mt-2 text-center">
+                                📸 Captured from camera
+                            </p>
+                        </div>
+                    )}
+                    
+                    {/* Camera and URL Options */}
+                    {!capturedImage && (
+                        <div className="space-y-3">
+                            {/* Camera Capture Button */}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShowCamera(true)}
+                                className="w-full h-24 border-2 border-dashed border-accent/50 hover:border-accent hover:bg-accent/5 transition-all"
+                            >
+                                <div className="flex flex-col items-center gap-2">
+                                    <Camera className="h-8 w-8 text-accent" />
+                                    <span className="text-sm font-medium">Take Photo of Book Cover</span>
+                                </div>
+                            </Button>
+                            
+                            <div className="flex items-center gap-3">
+                                <div className="flex-1 h-px bg-border" />
+                                <span className="text-xs text-muted-foreground">OR</span>
+                                <div className="flex-1 h-px bg-border" />
+                            </div>
+                            
+                            {/* URL Input */}
+                            <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        name="cover_url"
+                                        type="url"
+                                        value={coverUrlInput}
+                                        onChange={(e) => setCoverUrlInput(e.target.value)}
+                                        placeholder="Enter image URL..."
+                                        className="pl-10"
+                                    />
+                                </div>
+                            </div>
+                            
+                            {/* URL Preview */}
+                            {coverUrlInput && (
+                                <div className="relative inline-block">
+                                    <img
+                                        src={coverUrlInput}
+                                        alt="Cover preview"
+                                        className="w-32 h-44 object-cover rounded-lg border shadow"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none'
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -250,18 +350,37 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
             {/* Genres */}
             <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Genres</h3>
+                {/* Show currently selected genres that aren't in the predefined list */}
+                {selectedGenres.filter(g => !GENRES.includes(g)).length > 0 && (
+                    <div className="mb-2">
+                        <p className="text-xs text-muted-foreground mb-1">Currently selected (legacy):</p>
+                        <div className="flex flex-wrap gap-2">
+                            {selectedGenres.filter(g => !GENRES.includes(g)).map(genre => (
+                                <button
+                                    key={genre}
+                                    type="button"
+                                    onClick={() => toggleGenre(genre)}
+                                    className="px-3 py-1 rounded-full text-sm border bg-primary text-primary-foreground border-primary"
+                                >
+                                    {genre} ✕
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 <div className="flex flex-wrap gap-2">
                     {GENRES.map(genre => (
                         <button
                             key={genre}
                             type="button"
                             onClick={() => toggleGenre(genre)}
-                            className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                            className={`px-3 py-1 rounded-full text-sm border transition-colors flex items-center gap-1 ${
                                 selectedGenres.includes(genre)
                                     ? 'bg-primary text-primary-foreground border-primary'
                                     : 'bg-secondary/50 border-border hover:bg-secondary'
                             }`}
                         >
+                            {selectedGenres.includes(genre) && <span>✓</span>}
                             {genre}
                         </button>
                     ))}
@@ -271,18 +390,37 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
             {/* Moods */}
             <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Moods</h3>
+                {/* Show currently selected moods that aren't in the predefined list */}
+                {selectedMoods.filter(m => !MOODS.find(mood => mood.name === m)).length > 0 && (
+                    <div className="mb-2">
+                        <p className="text-xs text-muted-foreground mb-1">Currently selected (legacy):</p>
+                        <div className="flex flex-wrap gap-2">
+                            {selectedMoods.filter(m => !MOODS.find(mood => mood.name === m)).map(mood => (
+                                <button
+                                    key={mood}
+                                    type="button"
+                                    onClick={() => toggleMood(mood)}
+                                    className="px-3 py-1 rounded-full text-sm border bg-primary text-primary-foreground border-primary"
+                                >
+                                    {mood} ✕
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 <div className="flex flex-wrap gap-2">
                     {MOODS.map(mood => (
                         <button
                             key={mood.name}
                             type="button"
                             onClick={() => toggleMood(mood.name)}
-                            className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                            className={`px-3 py-1 rounded-full text-sm border transition-colors flex items-center gap-1 ${
                                 selectedMoods.includes(mood.name)
                                     ? 'bg-primary text-primary-foreground border-primary'
                                     : 'bg-secondary/50 border-border hover:bg-secondary'
                             }`}
                         >
+                            {selectedMoods.includes(mood.name) && <span>✓</span>}
                             {mood.emoji} {mood.name}
                         </button>
                     ))}
@@ -402,6 +540,14 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
                     submitLabel || (mode === 'create' ? 'Create Book' : 'Update Book')
                 )}
             </Button>
+
+            {/* Camera Capture Modal */}
+            {showCamera && (
+                <CameraCapture
+                    onCapture={handleCameraCapture}
+                    onClose={() => setShowCamera(false)}
+                />
+            )}
         </form>
     )
 }

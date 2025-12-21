@@ -1,12 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { Search, User, Heart, Menu, X, BookOpen, Home, ShoppingCart, Package } from "lucide-react"
+import Image from "next/image"
+import { Search, User, Heart, Menu, X, BookOpen, Home, ShoppingCart, Package, UserCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MegaMenu } from "@/components/layout/MegaMenu"
 import { ModeToggle } from "@/components/mode-toggle"
 import { CartDrawer } from "@/components/features/CartDrawer"
+import { UserProfileModal } from "@/components/features/UserProfileModal"
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -22,6 +24,7 @@ export function Navbar() {
     const [lastScrollY, setLastScrollY] = useState(0)
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
     const { bookIds } = useWishlistStore()
     const { getTotalItems } = useCartStore()
     const { scrollY } = useScroll()
@@ -124,8 +127,15 @@ export function Navbar() {
                 `}>
                     {/* Left: Logo */}
                     <Link href="/" className="group flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
-                        <div className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-foreground to-foreground/80 text-background flex items-center justify-center font-serif font-bold text-lg sm:text-xl md:text-2xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                            H
+                        <div className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 rounded-lg sm:rounded-xl overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                            <Image
+                                src="/logo.jpeg"
+                                alt="Hamro Pustak Pasal"
+                                width={48}
+                                height={48}
+                                className="h-full w-full object-cover"
+                                priority
+                            />
                         </div>
                         <span className="font-serif text-xs xs:text-sm sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight transition-colors text-gradient whitespace-nowrap hidden xs:inline">
                             Hamro Pustak Pasal
@@ -231,6 +241,12 @@ export function Navbar() {
                                         <Package className="h-4 w-4" /> My Orders
                                     </Link>
                                     <button
+                                        onClick={() => setIsProfileModalOpen(true)}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-secondary/50 transition-colors"
+                                    >
+                                        <UserCircle className="h-4 w-4" /> My Profile
+                                    </button>
+                                    <button
                                         onClick={async () => {
                                             await supabase.auth.signOut()
                                             router.refresh()
@@ -322,8 +338,14 @@ export function Navbar() {
                                 {/* Header */}
                                 <div className="flex items-center justify-between pb-4 border-b border-border">
                                     <div className="flex items-center gap-2">
-                                        <div className="h-8 w-8 rounded-lg bg-foreground text-background flex items-center justify-center font-serif font-bold text-xl shadow-lg">
-                                            H
+                                        <div className="h-10 w-10 rounded-lg overflow-hidden shadow-lg">
+                                            <Image
+                                                src="/logo.jpeg"
+                                                alt="Hamro Pustak Pasal"
+                                                width={40}
+                                                height={40}
+                                                className="h-full w-full object-cover"
+                                            />
                                         </div>
                                         <span className="font-serif text-lg font-bold text-gradient">Hamro Pustak Pasal</span>
                                     </div>
@@ -411,10 +433,26 @@ export function Navbar() {
                                 {/* User Section */}
                                 {user ? (
                                     <div className="space-y-2 pt-4 border-t border-border">
-                                        <div className="px-4 py-2">
-                                            <p className="font-medium text-sm">{user.user_metadata?.full_name || 'User'}</p>
-                                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                                        </div>
+                                        <button
+                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary/50 transition-colors"
+                                            onClick={() => {
+                                                setIsMobileMenuOpen(false)
+                                                setIsProfileModalOpen(true)
+                                            }}
+                                        >
+                                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20 flex-shrink-0">
+                                                {user.user_metadata?.avatar_url ? (
+                                                    <img src={user.user_metadata.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                                                ) : (
+                                                    <UserCircle className="h-6 w-6 text-primary" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 text-left">
+                                                <p className="font-medium text-sm">{user.user_metadata?.full_name || 'User'}</p>
+                                                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                                            </div>
+                                            <span className="text-xs text-muted-foreground">Edit</span>
+                                        </button>
                                         {isAdmin && (
                                             <Link
                                                 href="/admin"
@@ -452,6 +490,14 @@ export function Navbar() {
                     </>
                 )}
             </AnimatePresence>
+
+            {/* User Profile Modal */}
+            {isProfileModalOpen && (
+                <UserProfileModal
+                    onClose={() => setIsProfileModalOpen(false)}
+                    onProfileComplete={() => setIsProfileModalOpen(false)}
+                />
+            )}
         </>
     )
 }

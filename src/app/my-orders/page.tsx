@@ -1,36 +1,80 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Package, Clock, Truck, CheckCircle2, XCircle, ChevronRight, Search } from "lucide-react"
-import { Order, getUserOrders, ORDER_STAGES, getStatusIndex } from "@/lib/orders"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Package, Clock, Truck, CheckCircle2, XCircle, ChevronRight, Search, X, AlertTriangle } from "lucide-react"
+import { Order, getUserOrders, ORDER_STAGES, getStatusIndex, cancelOrder, OrderStatus } from "@/lib/orders"
 
 const statusColors: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-    confirmed: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    collecting: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
-    packing: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-    shipping: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
-    out_for_delivery: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-    delivered: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-    cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    pending: "bg-emerald-400 text-white",
+    confirmed: "bg-emerald-400 text-white",
+    collecting: "bg-emerald-400 text-white",
+    packing: "bg-emerald-400 text-white",
+    shipping: "bg-emerald-400 text-white",
+    out_for_delivery: "bg-emerald-400 text-white",
+    delivered: "bg-emerald-500 text-white",
+    cancelled: "bg-red-500 text-white",
 }
+
+// Non-cancellable statuses
+const NON_CANCELLABLE_STATUSES: OrderStatus[] = ["shipping", "out_for_delivery", "delivered", "cancelled"]
 
 export default function MyOrdersPage() {
     const [orders, setOrders] = useState<Order[]>([])
+    const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
     const [loading, setLoading] = useState(true)
     const [user, setUser] = useState<any>(null)
+    const [searchQuery, setSearchQuery] = useState("")
+    const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null)
+    const [cancelReason, setCancelReason] = useState("")
+    const [cancelLoading, setCancelLoading] = useState(false)
     const router = useRouter()
     const supabase = createClient()
+
+    const canCancelOrder = (status: OrderStatus) => !NON_CANCELLABLE_STATUSES.includes(status)
+
+    const handleCancelOrder = async () => {
+        if (!cancellingOrderId || !cancelReason.trim() || !user) return
+
+        setCancelLoading(true)
+        const success = await cancelOrder(cancellingOrderId, cancelReason.trim(), user.id)
+        
+        if (success) {
+            // Refresh orders
+            const userOrders = await getUserOrders(user.id)
+            setOrders(userOrders)
+            setFilteredOrders(userOrders)
+        }
+        
+        setCancelLoading(false)
+        setCancellingOrderId(null)
+        setCancelReason("")
+    }
 
     useEffect(() => {
         checkUserAndFetch()
     }, [])
+
+    useEffect(() => {
+        if (searchQuery.trim() === "") {
+            setFilteredOrders(orders)
+        } else {
+            const query = searchQuery.toLowerCase()
+            const filtered = orders.filter(order => 
+                order.tracking_number.toLowerCase().includes(query) ||
+                order.items.some(item => item.title.toLowerCase().includes(query)) ||
+                order.status.toLowerCase().includes(query)
+            )
+            setFilteredOrders(filtered)
+        }
+    }, [searchQuery, orders])
 
     const checkUserAndFetch = async () => {
         const {
@@ -45,13 +89,26 @@ export default function MyOrdersPage() {
         setUser(user)
         const userOrders = await getUserOrders(user.id)
         setOrders(userOrders)
+        setFilteredOrders(userOrders)
         setLoading(false)
     }
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center pt-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="min-h-screen flex flex-col items-center justify-center pt-20 gap-4">
+                <div className="relative">
+                    <div className="h-16 w-16 rounded-xl overflow-hidden shadow-lg">
+                        <Image
+                            src="/logo.jpeg"
+                            alt="Hamro Pustak Pasal"
+                            width={64}
+                            height={64}
+                            className="h-full w-full object-cover"
+                        />
+                    </div>
+                    <div className="absolute -inset-2 border-2 border-primary/30 border-t-primary rounded-2xl animate-spin" />
+                </div>
+                <p className="text-muted-foreground">Loading your orders...</p>
             </div>
         )
     }
@@ -64,6 +121,43 @@ export default function MyOrdersPage() {
                     <h1 className="text-3xl sm:text-4xl font-serif font-bold mb-2">My Orders</h1>
                     <p className="text-muted-foreground">Track and manage your orders</p>
                 </motion.div>
+
+                {/* Find Your Order Search */}
+                {orders.length > 0 && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -10 }} 
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="mb-6"
+                    >
+                        <div className="bg-card rounded-2xl border shadow-sm p-4">
+                            <label className="text-sm font-medium text-muted-foreground mb-2 block">Find Your Order</label>
+                            <div className="relative">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <Input
+                                    type="text"
+                                    placeholder="Search by tracking number, book title, or status..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="h-12 pl-12 pr-10 rounded-xl bg-secondary/50 border-border"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => setSearchQuery("")}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                )}
+                            </div>
+                            {searchQuery && (
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    Found {filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''} matching "{searchQuery}"
+                                </p>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
 
                 {orders.length === 0 ? (
                     <motion.div
@@ -82,7 +176,23 @@ export default function MyOrdersPage() {
                     </motion.div>
                 ) : (
                     <div className="space-y-4">
-                        {orders.map((order, index) => (
+                        {filteredOrders.length === 0 && searchQuery ? (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-card rounded-2xl border shadow-sm p-8 text-center"
+                            >
+                                <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                                <h3 className="text-lg font-semibold mb-2">No orders found</h3>
+                                <p className="text-muted-foreground mb-4">
+                                    No orders match your search "{searchQuery}"
+                                </p>
+                                <Button variant="outline" onClick={() => setSearchQuery("")}>
+                                    Clear Search
+                                </Button>
+                            </motion.div>
+                        ) : (
+                            filteredOrders.map((order, index) => (
                             <motion.div
                                 key={order.id}
                                 initial={{ opacity: 0, y: 20 }}
@@ -148,11 +258,40 @@ export default function MyOrdersPage() {
                                         )}
                                     </div>
 
+                                    {/* Order Details - Charges */}
+                                    <div className="mt-4 pt-4 border-t">
+                                        <div className="flex justify-end">
+                                            <div className="w-full sm:w-64 space-y-2">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Subtotal</span>
+                                                    <span>NRS {order.subtotal}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Shipping</span>
+                                                    <span>{order.shipping_cost > 0 ? `NRS ${order.shipping_cost}` : 'Free'}</span>
+                                                </div>
+                                                <div className="flex justify-between font-semibold pt-2 border-t">
+                                                    <span>Total</span>
+                                                    <span className="text-lg">NRS {order.total}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {/* Order Footer */}
                                     <div className="flex items-center justify-between mt-4 pt-4 border-t">
                                         <div>
-                                            <span className="text-sm text-muted-foreground">Total: </span>
-                                            <span className="font-bold text-lg">NRS {order.total}</span>
+                                            {canCancelOrder(order.status) && (
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200 dark:border-red-900"
+                                                    onClick={() => setCancellingOrderId(order.id)}
+                                                >
+                                                    <XCircle className="h-4 w-4" />
+                                                    Cancel
+                                                </Button>
+                                            )}
                                         </div>
                                         <Link href={`/track-order?tracking=${order.tracking_number}`}>
                                             <Button variant="outline" size="sm" className="gap-2">
@@ -163,7 +302,8 @@ export default function MyOrdersPage() {
                                     </div>
                                 </div>
                             </motion.div>
-                        ))}
+                        ))
+                        )}
                     </div>
                 )}
 
@@ -183,6 +323,74 @@ export default function MyOrdersPage() {
                     </Link>
                 </motion.div>
             </div>
+
+            {/* Cancel Order Modal */}
+            <AnimatePresence>
+                {cancellingOrderId && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => {
+                            setCancellingOrderId(null)
+                            setCancelReason("")
+                        }}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-card rounded-2xl border shadow-xl max-w-md w-full p-6"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                                    <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-lg">Cancel Order</h3>
+                                    <p className="text-sm text-muted-foreground">This action cannot be undone</p>
+                                </div>
+                            </div>
+
+                            <div className="mb-4">
+                                <label className="text-sm font-medium mb-2 block">
+                                    Reason for cancellation <span className="text-red-500">*</span>
+                                </label>
+                                <Textarea
+                                    placeholder="Please tell us why you want to cancel this order..."
+                                    value={cancelReason}
+                                    onChange={(e) => setCancelReason(e.target.value)}
+                                    className="min-h-[100px] resize-none"
+                                />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <Button
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => {
+                                        setCancellingOrderId(null)
+                                        setCancelReason("")
+                                    }}
+                                    disabled={cancelLoading}
+                                >
+                                    Keep Order
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    className="flex-1"
+                                    onClick={handleCancelOrder}
+                                    disabled={!cancelReason.trim() || cancelLoading}
+                                >
+                                    {cancelLoading ? "Cancelling..." : "Cancel Order"}
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }

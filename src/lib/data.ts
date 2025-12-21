@@ -1,6 +1,7 @@
 import { Book } from './types';
 
 export const GENRES = [
+    // Fiction
     'Fiction',
     'Science Fiction',
     'Fantasy',
@@ -9,6 +10,7 @@ export const GENRES = [
     'Romance',
     'Historical Fiction',
     'Literary Fiction',
+    // Non-Fiction
     'Non-Fiction',
     'Biography',
     'Self-Help',
@@ -19,6 +21,32 @@ export const GENRES = [
     'Psychology',
     'Young Adult',
     'Children',
+    // Additional genres from database
+    'Adventure',
+    'Autobiography',
+    'Comedy',
+    'Coming of Age',
+    'Drama',
+    'Existentialism',
+    'Friendship',
+    'Historical',
+    'Humor',
+    'Identity',
+    'Inspirational',
+    'Life',
+    'Literature',
+    'Memoir',
+    'Migration',
+    'Mythology',
+    'Poetry',
+    'Political',
+    'Postmodern',
+    'Regional',
+    'Rural',
+    'Social',
+    'Spiritual',
+    'Tragedy',
+    'War',
 ];
 
 export const MOODS = [
@@ -42,6 +70,9 @@ export const MOODS = [
     { name: 'Reflective', emoji: '🪞', color: 'from-indigo-400 to-purple-500' },
     { name: 'Hopeful', emoji: '🌅', color: 'from-orange-400 to-pink-400' },
     { name: 'Magical', emoji: '✨', color: 'from-purple-500 to-pink-600' },
+    // Additional moods from database
+    { name: 'Emotional', emoji: '💔', color: 'from-rose-500 to-red-600' },
+    { name: 'Philosophical', emoji: '🧠', color: 'from-indigo-500 to-purple-600' },
 ];
 
 export const MOCK_BOOKS: Book[] = [

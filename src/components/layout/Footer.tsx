@@ -53,19 +53,20 @@ export function Footer() {
                             Your digital gateway to a world of stories. We believe in the magic of reading and connecting people with their next favorite book.
                         </p>
                         {enabledSocialLinks.length > 0 && (
-                            <div className="flex gap-3 xs:gap-4 pt-2">
+                            <div className="flex gap-4 xs:gap-6 pt-2">
                                 {enabledSocialLinks.map((link) => {
                                     const IconComponent = socialIconMap[link.platform] || Facebook
+                                    const platformName = link.platform.charAt(0).toUpperCase() + link.platform.slice(1)
                                     return (
                                         <Link 
                                             key={link.id} 
                                             href={link.url} 
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-muted-foreground hover:text-primary transition-colors"
+                                            className="flex flex-col items-center text-muted-foreground hover:text-primary transition-colors"
                                         >
-                                            <IconComponent className="h-4 w-4 xs:h-5 xs:w-5" />
-                                            <span className="sr-only">{link.platform}</span>
+                                            <IconComponent className="h-9 w-9 xs:h-10 xs:w-10" />
+                                            <span className="text-xs xs:text-sm mt-1">{platformName}</span>
                                         </Link>
                                     )
                                 })}

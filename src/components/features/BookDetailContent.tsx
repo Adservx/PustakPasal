@@ -81,7 +81,7 @@ export function BookDetailContent({ book, relatedBooks }: { book: Book; relatedB
     return (
         <div className="min-h-screen bg-gradient-to-b from-secondary/20 to-background">
             {/* Hero Section */}
-            <div className="bg-gradient-to-b from-secondary/40 to-transparent pt-20 sm:pt-24 pb-8">
+            <div className="bg-gradient-to-b from-secondary/40 to-transparent pt-28 sm:pt-32 md:pt-36 pb-8">
                 <div className="container max-w-6xl mx-auto px-4 sm:px-6">
                     {/* Breadcrumb */}
                     <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">

@@ -42,9 +42,14 @@ export function BooksContent() {
     useEffect(() => {
         const fetchBooks = async () => {
             setIsLoading(true)
-            const data = await getBooks()
-            setBooks(data)
-            setIsLoading(false)
+            try {
+                const data = await getBooks()
+                setBooks(data)
+            } catch (error) {
+                console.error('Error fetching books:', error)
+            } finally {
+                setIsLoading(false)
+            }
         }
         fetchBooks()
     }, [])
@@ -312,11 +317,10 @@ export function BooksContent() {
                                     {sortedBooks.map((book, i) => (
                                         <motion.div
                                             key={book.id}
-                                            layout
-                                            initial={{ opacity: 0, scale: 0.95 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            exit={{ opacity: 0, scale: 0.95 }}
-                                            transition={{ duration: 0.2, delay: i * 0.03 }}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.2, delay: Math.min(i * 0.02, 0.3) }}
                                         >
                                             <AnimatedBookCard book={book} index={i} />
                                         </motion.div>

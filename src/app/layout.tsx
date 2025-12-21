@@ -31,6 +31,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Hamro Pustak Pasal | Your Digital Library",
   description: "The best online bookstore for physical, digital, and audiobooks.",
+  icons: {
+    icon: "/logo.jpeg",
+    shortcut: "/logo.jpeg",
+    apple: "/logo.jpeg",
+  },
 };
 
 export default function RootLayout({

@@ -17,6 +17,40 @@ export async function deleteBook(id: string) {
     revalidatePath('/admin')
 }
 
+async function uploadCapturedImage(supabase: Awaited<ReturnType<typeof createClient>>, imageDataUrl: string): Promise<string> {
+    // Convert base64 data URL to blob
+    const base64Data = imageDataUrl.split(',')[1]
+    const byteCharacters = atob(base64Data)
+    const byteNumbers = new Array(byteCharacters.length)
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+    }
+    const byteArray = new Uint8Array(byteNumbers)
+    
+    // Generate unique filename
+    const filename = `book-cover-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`
+    
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+        .from('book-covers')
+        .upload(filename, byteArray, {
+            contentType: 'image/jpeg',
+            upsert: false
+        })
+    
+    if (error) {
+        console.error('Storage upload error:', error)
+        throw new Error('Failed to upload image')
+    }
+    
+    // Get public URL
+    const { data: urlData } = supabase.storage
+        .from('book-covers')
+        .getPublicUrl(data.path)
+    
+    return urlData.publicUrl
+}
+
 export async function createBook(formData: FormData) {
     const supabase = await createClient()
 
@@ -30,13 +64,22 @@ export async function createBook(formData: FormData) {
     const genres = JSON.parse(formData.get('genres') as string || '[]')
     const mood = JSON.parse(formData.get('mood') as string || '[]')
 
+    // Handle cover image - either from camera capture or URL
+    let coverUrl = formData.get('cover_url') as string || ''
+    const capturedImage = formData.get('captured_image') as string
+    
+    if (capturedImage) {
+        // Upload captured image to storage
+        coverUrl = await uploadCapturedImage(supabase, capturedImage)
+    }
+
     const badgeTypeValue = formData.get('badge_type') as string
     const book = {
         title: formData.get('title') as string,
         author: formData.get('author') as string,
         description: formData.get('description') as string || '',
         excerpt: formData.get('excerpt') as string || '',
-        cover_url: formData.get('cover_url') as string || '',
+        cover_url: coverUrl,
         price_hardcover: parseFloat(formData.get('price_hardcover') as string) || null,
         price_paperback: parseFloat(formData.get('price_paperback') as string) || null,
         price_ebook: parseFloat(formData.get('price_ebook') as string) || null,
@@ -76,13 +119,22 @@ export async function updateBook(id: string, formData: FormData) {
     const genres = JSON.parse(formData.get('genres') as string || '[]')
     const mood = JSON.parse(formData.get('mood') as string || '[]')
 
+    // Handle cover image - either from camera capture or URL
+    let coverUrl = formData.get('cover_url') as string || ''
+    const capturedImage = formData.get('captured_image') as string
+    
+    if (capturedImage) {
+        // Upload captured image to storage
+        coverUrl = await uploadCapturedImage(supabase, capturedImage)
+    }
+
     const badgeTypeValue = formData.get('badge_type') as string
     const updates = {
         title: formData.get('title') as string,
         author: formData.get('author') as string,
         description: formData.get('description') as string || '',
         excerpt: formData.get('excerpt') as string || '',
-        cover_url: formData.get('cover_url') as string || '',
+        cover_url: coverUrl,
         price_hardcover: parseFloat(formData.get('price_hardcover') as string) || null,
         price_paperback: parseFloat(formData.get('price_paperback') as string) || null,
         price_ebook: parseFloat(formData.get('price_ebook') as string) || null,
