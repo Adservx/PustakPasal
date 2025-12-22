@@ -85,13 +85,17 @@ export function BooksContent({ initialBooks }: BooksContentProps) {
     const activeFilterCount = selectedGenres.length + (selectedMood ? 1 : 0) + (minPrice > 0 || maxPrice < 5000 ? 1 : 0)
 
     const handleMinPriceChange = (value: string) => {
-        const num = parseInt(value) || 0
-        setMinPrice(Math.max(0, num))
+        // Allow empty or numeric input only
+        if (value === '' || /^\d*$/.test(value)) {
+            setMinPrice(value === '' ? 0 : parseInt(value))
+        }
     }
 
     const handleMaxPriceChange = (value: string) => {
-        const num = parseInt(value) || 0
-        setMaxPrice(Math.max(0, num))
+        // Allow empty or numeric input only
+        if (value === '' || /^\d*$/.test(value)) {
+            setMaxPrice(value === '' ? 0 : parseInt(value))
+        }
     }
 
     // Shared Filter Content Component
@@ -120,30 +124,32 @@ export function BooksContent({ initialBooks }: BooksContentProps) {
                 <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-4">
                     Price Range
                 </h4>
-                <div className="flex gap-3">
-                    <div className="flex-1">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    <div>
                         <label className="text-xs text-muted-foreground mb-1.5 block">Min. Price</label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">NRS</span>
+                            <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm text-muted-foreground">NRS</span>
                             <Input
-                                type="number"
-                                value={minPrice}
+                                type="text"
+                                inputMode="numeric"
+                                value={minPrice || ''}
                                 onChange={(e) => handleMinPriceChange(e.target.value)}
-                                className="h-10 pl-12 pr-3 rounded-lg bg-secondary/30 border-border/50"
-                                min={0}
+                                className="h-10 pl-10 sm:pl-12 pr-2 sm:pr-3 rounded-lg bg-secondary/30 border-border/50 text-sm"
+                                placeholder="0"
                             />
                         </div>
                     </div>
-                    <div className="flex-1">
+                    <div>
                         <label className="text-xs text-muted-foreground mb-1.5 block">Max. Price</label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">NRS</span>
+                            <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm text-muted-foreground">NRS</span>
                             <Input
-                                type="number"
-                                value={maxPrice}
+                                type="text"
+                                inputMode="numeric"
+                                value={maxPrice || ''}
                                 onChange={(e) => handleMaxPriceChange(e.target.value)}
-                                className="h-10 pl-12 pr-3 rounded-lg bg-secondary/30 border-border/50"
-                                min={0}
+                                className="h-10 pl-10 sm:pl-12 pr-2 sm:pr-3 rounded-lg bg-secondary/30 border-border/50 text-sm"
+                                placeholder="5000"
                             />
                         </div>
                     </div>

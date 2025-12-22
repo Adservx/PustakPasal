@@ -309,7 +309,8 @@ h6 {
   select,
   textarea {
     min-height: 40px;
-    font-size: 16px; /* Prevent iOS zoom on input focus */
+    font-size: 16px;
+    /* Prevent iOS zoom on input focus */
   }
 
   /* Improve card spacing on mobile */
@@ -582,7 +583,10 @@ img {
   }
 
   /* Larger touch targets on touch devices */
-  button, a, input[type="checkbox"], input[type="radio"] {
+  button,
+  a,
+  input[type="checkbox"],
+  input[type="radio"] {
     min-height: 44px;
     min-width: 44px;
   }
@@ -615,4 +619,13 @@ img {
     padding: 0.5rem;
     border-radius: 0.5rem;
   }
+}
+
+/* Safe Area Utilities */
+.pt-safe-top {
+  padding-top: env(safe-area-inset-top, 20px);
+}
+
+.pb-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
 }

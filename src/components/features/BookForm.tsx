@@ -576,14 +576,14 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
                                 <button
                                     type="button"
                                     onClick={() => setBadgeType(null)}
-                                    className={`px-3 py-2 rounded-lg text-sm border-2 transition-all duration-200 flex items-center gap-2 ${
+                                    className={`px-2.5 sm:px-3 py-2 rounded-lg text-sm border-2 transition-all duration-200 flex items-center gap-1.5 sm:gap-2 ${
                                         badgeType === null
                                             ? 'border-accent bg-accent/10 text-accent font-medium ring-2 ring-accent/20'
                                             : 'border-border bg-secondary/30 hover:bg-secondary/50 hover:border-accent/50'
                                     }`}
                                 >
                                     <span className="text-base">➖</span>
-                                    <span>No Badge</span>
+                                    <span className="whitespace-nowrap">No Badge</span>
                                 </button>
                                 
                                 {/* Dynamic Badges from Database */}
@@ -592,14 +592,14 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
                                         <button
                                             type="button"
                                             onClick={() => setBadgeType(badge.name)}
-                                            className={`px-3 py-2 rounded-lg text-sm border-2 transition-all duration-200 flex items-center gap-2 ${
+                                            className={`px-2.5 sm:px-3 py-2 rounded-lg text-sm border-2 transition-all duration-200 flex items-center gap-1.5 sm:gap-2 ${
                                                 badgeType === badge.name
                                                     ? 'border-accent bg-accent/10 text-accent font-medium ring-2 ring-accent/20'
                                                     : 'border-border bg-secondary/30 hover:bg-secondary/50 hover:border-accent/50'
                                             }`}
                                         >
                                             <span className="text-base">{badge.emoji}</span>
-                                            <span>{badge.label}</span>
+                                            <span className="whitespace-nowrap">{badge.label}</span>
                                         </button>
                                         {/* Delete button for custom badges */}
                                         {!badge.is_default && (
@@ -622,64 +622,72 @@ export function BookForm({ mode, initialData, onSubmit, submitLabel }: BookFormP
                                 <button
                                     type="button"
                                     onClick={() => setShowCreateBadge(true)}
-                                    className="px-3 py-2 rounded-lg text-sm border-2 border-dashed border-accent/50 hover:border-accent hover:bg-accent/5 transition-all duration-200 flex items-center gap-2 text-accent"
+                                    className="px-3 py-2 rounded-lg text-sm border-2 border-dashed border-accent/50 hover:border-accent hover:bg-accent/5 transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-accent min-w-fit"
                                 >
-                                    <Plus className="h-4 w-4" />
-                                    <span>New Badge</span>
+                                    <Plus className="h-4 w-4 flex-shrink-0" />
+                                    <span className="whitespace-nowrap">New Badge</span>
                                 </button>
                             </div>
                             
                             {/* Create Badge Form */}
                             {showCreateBadge && (
-                                <div className="mt-4 p-4 rounded-lg border border-accent/30 bg-accent/5">
+                                <div className="mt-4 p-3 sm:p-4 rounded-lg border border-accent/30 bg-accent/5">
                                     <h4 className="text-sm font-medium mb-3">Create New Badge</h4>
-                                    <div className="flex gap-2 items-end">
-                                        <div className="flex-1">
+                                    
+                                    {/* Mobile: Label on first row, Emoji + Buttons on second row */}
+                                    {/* Desktop: All in one row */}
+                                    <div className="space-y-3 sm:space-y-0 sm:flex sm:gap-2 sm:items-end">
+                                        {/* Label Input - Full width on mobile, first row */}
+                                        <div className="w-full sm:flex-1">
                                             <label className="block text-xs text-muted-foreground mb-1">Label</label>
                                             <Input
                                                 value={newBadgeLabel}
                                                 onChange={(e) => setNewBadgeLabel(e.target.value)}
                                                 placeholder="e.g., Staff Pick"
-                                                className="h-9"
+                                                className="h-10 sm:h-9"
                                             />
                                         </div>
-                                        <div className="w-20">
-                                            <label className="block text-xs text-muted-foreground mb-1">Emoji</label>
-                                            <Input
-                                                value={newBadgeEmoji}
-                                                onChange={(e) => setNewBadgeEmoji(e.target.value)}
-                                                placeholder="🏷️"
-                                                className="h-9 text-center"
-                                                maxLength={2}
-                                            />
+                                        
+                                        {/* Emoji + Buttons - Second row on mobile */}
+                                        <div className="flex gap-2 items-end">
+                                            <div className="w-20">
+                                                <label className="block text-xs text-muted-foreground mb-1">Emoji</label>
+                                                <Input
+                                                    value={newBadgeEmoji}
+                                                    onChange={(e) => setNewBadgeEmoji(e.target.value)}
+                                                    placeholder="🏷️"
+                                                    className="h-10 sm:h-9 text-center"
+                                                    maxLength={2}
+                                                />
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                onClick={handleCreateBadge}
+                                                disabled={creatingBadge || !newBadgeLabel.trim()}
+                                                size="sm"
+                                                className="h-10 sm:h-9 flex-1 sm:flex-none px-4"
+                                            >
+                                                {creatingBadge ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    'Add'
+                                                )}
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setShowCreateBadge(false)
+                                                    setNewBadgeLabel('')
+                                                    setNewBadgeEmoji('🏷️')
+                                                    setBadgeError(null)
+                                                }}
+                                                className="h-10 sm:h-9 px-2"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
                                         </div>
-                                        <Button
-                                            type="button"
-                                            onClick={handleCreateBadge}
-                                            disabled={creatingBadge || !newBadgeLabel.trim()}
-                                            size="sm"
-                                            className="h-9"
-                                        >
-                                            {creatingBadge ? (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                'Add'
-                                            )}
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                                setShowCreateBadge(false)
-                                                setNewBadgeLabel('')
-                                                setNewBadgeEmoji('🏷️')
-                                                setBadgeError(null)
-                                            }}
-                                            className="h-9"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
                                     </div>
                                     {badgeError && (
                                         <p className="text-destructive text-xs mt-2">{badgeError}</p>
