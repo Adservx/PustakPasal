@@ -372,9 +372,13 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <Button
-                                                    variant={link.enabled ? "default" : "outline"}
+                                                    variant="outline"
                                                     size="sm"
-                                                    className="h-8 px-2 text-xs"
+                                                    className={`h-8 px-2 text-xs ${
+                                                        link.enabled 
+                                                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600' 
+                                                            : 'opacity-50'
+                                                    }`}
                                                     onClick={() => updateSocialLink(link.id, 'enabled', !link.enabled)}
                                                 >
                                                     {link.enabled ? 'On' : 'Off'}
@@ -426,8 +430,13 @@ export default function SettingsPage() {
                                         {/* Actions */}
                                         <div className="flex gap-2 flex-shrink-0">
                                             <Button
-                                                variant={link.enabled ? "default" : "outline"}
+                                                variant="outline"
                                                 size="sm"
+                                                className={`${
+                                                    link.enabled 
+                                                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600' 
+                                                        : 'opacity-50'
+                                                }`}
                                                 onClick={() => updateSocialLink(link.id, 'enabled', !link.enabled)}
                                             >
                                                 {link.enabled ? 'Enabled' : 'Disabled'}

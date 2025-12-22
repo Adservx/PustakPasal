@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
 import { Book } from '@/lib/types';
-import { MOCK_BOOKS } from '@/lib/data';
 import { mapBookData } from './books-shared';
 
 // Re-export mapBookData for backward compatibility
@@ -17,18 +16,18 @@ export async function getBooks(): Promise<Book[]> {
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.warn('Error fetching books from Supabase, falling back to mock data:', error);
-            return MOCK_BOOKS;
+            console.error('Error fetching books from Supabase:', error);
+            return [];
         }
 
         if (!data || data.length === 0) {
-            return MOCK_BOOKS;
+            return [];
         }
 
         return data.map(mapBookData);
     } catch (error) {
-        console.error('Unexpected error fetching books, falling back to mock data:', error);
-        return MOCK_BOOKS;
+        console.error('Unexpected error fetching books:', error);
+        return [];
     }
 }
 

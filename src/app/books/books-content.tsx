@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { AnimatedBookCard } from "@/components/features/AnimatedBookCard"
 import { Button } from "@/components/ui/button"
@@ -21,8 +21,8 @@ interface BooksContentProps {
 
 export function BooksContent({ initialBooks }: BooksContentProps) {
     const searchParams = useSearchParams()
-    const [minPrice, setMinPrice] = useState<number>(0)
-    const [maxPrice, setMaxPrice] = useState<number>(5000)
+    const [minPriceInput, setMinPriceInput] = useState<string>("0")
+    const [maxPriceInput, setMaxPriceInput] = useState<string>("5000")
     const [selectedGenres, setSelectedGenres] = useState<string[]>([])
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedMood, setSelectedMood] = useState("")
@@ -30,6 +30,10 @@ export function BooksContent({ initialBooks }: BooksContentProps) {
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
     const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
     const [books] = useState<Book[]>(initialBooks)
+
+    // Parse prices for filtering
+    const minPrice = parseInt(minPriceInput) || 0
+    const maxPrice = parseInt(maxPriceInput) || 0
 
     useEffect(() => {
         const search = searchParams.get('search')
@@ -77,8 +81,8 @@ export function BooksContent({ initialBooks }: BooksContentProps) {
         setSearchQuery("")
         setSelectedGenres([])
         setSelectedMood("")
-        setMinPrice(0)
-        setMaxPrice(5000)
+        setMinPriceInput("0")
+        setMaxPriceInput("5000")
     }
 
     const hasActiveFilters = searchQuery || selectedGenres.length > 0 || selectedMood || minPrice > 0 || maxPrice < 5000
@@ -87,19 +91,19 @@ export function BooksContent({ initialBooks }: BooksContentProps) {
     const handleMinPriceChange = (value: string) => {
         // Allow empty or numeric input only
         if (value === '' || /^\d*$/.test(value)) {
-            setMinPrice(value === '' ? 0 : parseInt(value))
+            setMinPriceInput(value)
         }
     }
 
     const handleMaxPriceChange = (value: string) => {
         // Allow empty or numeric input only
         if (value === '' || /^\d*$/.test(value)) {
-            setMaxPrice(value === '' ? 0 : parseInt(value))
+            setMaxPriceInput(value)
         }
     }
 
-    // Shared Filter Content Component
-    const FilterContent = () => (
+    // Shared Filter Content - memoized to prevent input focus loss
+    const filterContent = useMemo(() => (
         <div className="space-y-6">
             {/* Active Mood */}
             {selectedMood && (
@@ -132,7 +136,7 @@ export function BooksContent({ initialBooks }: BooksContentProps) {
                             <Input
                                 type="text"
                                 inputMode="numeric"
-                                value={minPrice || ''}
+                                value={minPriceInput}
                                 onChange={(e) => handleMinPriceChange(e.target.value)}
                                 className="h-10 pl-10 sm:pl-12 pr-2 sm:pr-3 rounded-lg bg-secondary/30 border-border/50 text-sm"
                                 placeholder="0"
@@ -146,7 +150,7 @@ export function BooksContent({ initialBooks }: BooksContentProps) {
                             <Input
                                 type="text"
                                 inputMode="numeric"
-                                value={maxPrice || ''}
+                                value={maxPriceInput}
                                 onChange={(e) => handleMaxPriceChange(e.target.value)}
                                 className="h-10 pl-10 sm:pl-12 pr-2 sm:pr-3 rounded-lg bg-secondary/30 border-border/50 text-sm"
                                 placeholder="5000"
@@ -218,7 +222,7 @@ export function BooksContent({ initialBooks }: BooksContentProps) {
                 </Button>
             )}
         </div>
-    )
+    ), [selectedMood, minPriceInput, maxPriceInput, selectedGenres, hasActiveFilters])
 
 
     return (
@@ -264,7 +268,7 @@ export function BooksContent({ initialBooks }: BooksContentProps) {
                                     </p>
                                 </div>
                             </div>
-                            <FilterContent />
+                            {filterContent}
                         </div>
                     </aside>
 
@@ -286,7 +290,7 @@ export function BooksContent({ initialBooks }: BooksContentProps) {
                             </div>
                             
                             <div className="flex-1 p-4 sm:p-6 overflow-y-auto scrollbar-none">
-                                <FilterContent />
+                                {filterContent}
                             </div>
                             
                             <div className="p-4 sm:p-6 border-t border-border/50">

@@ -1,8 +1,125 @@
-import { RotateCcw, Clock, CheckCircle, AlertCircle, Package } from "lucide-react"
+"use client"
+
+import { useState, useEffect } from "react"
+import { RotateCcw, Clock, CheckCircle, AlertCircle, Pencil, Check, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 
+interface ReturnsContent {
+    returnDays: string
+    refundDays: string
+    eligible: string[]
+    notEligible: string[]
+    steps: { title: string, desc: string }[]
+    refundInfo: string[]
+}
+
+const defaultContent: ReturnsContent = {
+    returnDays: "7-Day Returns",
+    refundDays: "5-7 business days",
+    eligible: [
+        "Books in original, unused condition",
+        "Items with original packaging intact",
+        "Damaged or defective items on arrival",
+        "Wrong item received",
+        "Missing pages or printing errors"
+    ],
+    notEligible: [
+        "Books with visible wear or damage by customer",
+        "Items returned after 7 days",
+        "Books with writing, highlighting, or marks",
+        "Items without original packaging",
+        "Digital products or gift cards"
+    ],
+    steps: [
+        { title: "Initiate Return", desc: "Go to My Orders, find your order, and click 'Request Return'" },
+        { title: "Pack the Item", desc: "Pack the book securely in its original packaging" },
+        { title: "Ship or Drop Off", desc: "Use our prepaid label or drop off at our nearest branch" },
+        { title: "Get Refund", desc: "Once received and inspected, refund is processed within 5-7 days" }
+    ],
+    refundInfo: [
+        "Refunds are credited to your original payment method",
+        "Bank transfers may take 3-5 additional business days",
+        "Shipping charges are non-refundable unless item was defective",
+        "For COD orders, refund is processed via bank transfer"
+    ]
+}
+
 export default function ReturnsPage() {
+    const [isAdmin, setIsAdmin] = useState(false)
+    const [content, setContent] = useState<ReturnsContent>(defaultContent)
+    const [editingField, setEditingField] = useState<string | null>(null)
+    const [editValue, setEditValue] = useState("")
+    const supabase = createClient()
+
+    useEffect(() => {
+        checkAdmin()
+        loadContent()
+    }, [])
+
+    const checkAdmin = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+            setIsAdmin(profile?.role === 'admin')
+        }
+    }
+
+    const loadContent = async () => {
+        const { data } = await supabase
+            .from('site_settings')
+            .select('value')
+            .eq('key', 'returns_content')
+            .single()
+        if (data?.value) {
+            setContent(data.value as ReturnsContent)
+        }
+    }
+
+    const saveContent = async (updated: ReturnsContent) => {
+        await supabase
+            .from('site_settings')
+            .upsert({
+                key: 'returns_content',
+                value: updated,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'key' })
+    }
+
+    const editListItem = async (field: 'eligible' | 'notEligible' | 'refundInfo', idx: number) => {
+        const currentValue = content[field][idx]
+        const newValue = prompt("Edit item:", currentValue)
+        if (newValue !== null) {
+            const updated = {
+                ...content,
+                [field]: content[field].map((item, i) => i === idx ? newValue : item)
+            }
+            setContent(updated)
+            await saveContent(updated)
+        }
+    }
+
+    const editStep = async (idx: number, field: 'title' | 'desc') => {
+        const currentValue = content.steps[idx][field]
+        const newValue = prompt(`Edit ${field}:`, currentValue)
+        if (newValue !== null) {
+            const updated = {
+                ...content,
+                steps: content.steps.map((step, i) => 
+                    i === idx ? { ...step, [field]: newValue } : step
+                )
+            }
+            setContent(updated)
+            await saveContent(updated)
+        }
+    }
+
     return (
         <div className="container mx-auto px-4 pt-24 md:pt-32 pb-8 md:pb-12">
             <div className="max-w-4xl mx-auto">
@@ -18,7 +135,26 @@ export default function ReturnsPage() {
                     <Card className="text-center">
                         <CardContent className="pt-6">
                             <Clock className="h-8 w-8 text-primary mx-auto mb-3" />
-                            <h3 className="font-semibold mb-1">7-Day Returns</h3>
+                            <h3 className="font-semibold mb-1 group">
+                                {content.returnDays}
+                                {isAdmin && (
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 w-6 p-0 ml-1 opacity-0 group-hover:opacity-100"
+                                        onClick={() => {
+                                            const newValue = prompt("Edit:", content.returnDays)
+                                            if (newValue) {
+                                                const updated = { ...content, returnDays: newValue }
+                                                setContent(updated)
+                                                saveContent(updated)
+                                            }
+                                        }}
+                                    >
+                                        <Pencil className="h-3 w-3" />
+                                    </Button>
+                                )}
+                            </h3>
                             <p className="text-sm text-muted-foreground">Return within 7 days of delivery</p>
                         </CardContent>
                     </Card>
@@ -33,7 +169,26 @@ export default function ReturnsPage() {
                         <CardContent className="pt-6">
                             <CheckCircle className="h-8 w-8 text-primary mx-auto mb-3" />
                             <h3 className="font-semibold mb-1">Quick Refunds</h3>
-                            <p className="text-sm text-muted-foreground">Refund within 5-7 business days</p>
+                            <p className="text-sm text-muted-foreground group">
+                                Refund within {content.refundDays}
+                                {isAdmin && (
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 w-6 p-0 ml-1 opacity-0 group-hover:opacity-100"
+                                        onClick={() => {
+                                            const newValue = prompt("Edit:", content.refundDays)
+                                            if (newValue) {
+                                                const updated = { ...content, refundDays: newValue }
+                                                setContent(updated)
+                                                saveContent(updated)
+                                            }
+                                        }}
+                                    >
+                                        <Pencil className="h-3 w-3" />
+                                    </Button>
+                                )}
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
@@ -51,11 +206,21 @@ export default function ReturnsPage() {
                             </CardHeader>
                             <CardContent>
                                 <ul className="space-y-2 text-sm text-muted-foreground">
-                                    <li>• Books in original, unused condition</li>
-                                    <li>• Items with original packaging intact</li>
-                                    <li>• Damaged or defective items on arrival</li>
-                                    <li>• Wrong item received</li>
-                                    <li>• Missing pages or printing errors</li>
+                                    {content.eligible.map((item, idx) => (
+                                        <li key={idx} className="group">
+                                            • {item}
+                                            {isAdmin && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-6 w-6 p-0 ml-1 opacity-0 group-hover:opacity-100"
+                                                    onClick={() => editListItem('eligible', idx)}
+                                                >
+                                                    <Pencil className="h-3 w-3" />
+                                                </Button>
+                                            )}
+                                        </li>
+                                    ))}
                                 </ul>
                             </CardContent>
                         </Card>
@@ -68,11 +233,21 @@ export default function ReturnsPage() {
                             </CardHeader>
                             <CardContent>
                                 <ul className="space-y-2 text-sm text-muted-foreground">
-                                    <li>• Books with visible wear or damage by customer</li>
-                                    <li>• Items returned after 7 days</li>
-                                    <li>• Books with writing, highlighting, or marks</li>
-                                    <li>• Items without original packaging</li>
-                                    <li>• Digital products or gift cards</li>
+                                    {content.notEligible.map((item, idx) => (
+                                        <li key={idx} className="group">
+                                            • {item}
+                                            {isAdmin && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-6 w-6 p-0 ml-1 opacity-0 group-hover:opacity-100"
+                                                    onClick={() => editListItem('notEligible', idx)}
+                                                >
+                                                    <Pencil className="h-3 w-3" />
+                                                </Button>
+                                            )}
+                                        </li>
+                                    ))}
                                 </ul>
                             </CardContent>
                         </Card>
@@ -83,19 +258,38 @@ export default function ReturnsPage() {
                 <div className="mb-12">
                     <h2 className="text-2xl font-bold mb-6">How to Return</h2>
                     <div className="space-y-4">
-                        {[
-                            { step: 1, title: "Initiate Return", desc: "Go to My Orders, find your order, and click 'Request Return'" },
-                            { step: 2, title: "Pack the Item", desc: "Pack the book securely in its original packaging" },
-                            { step: 3, title: "Ship or Drop Off", desc: "Use our prepaid label or drop off at our nearest branch" },
-                            { step: 4, title: "Get Refund", desc: "Once received and inspected, refund is processed within 5-7 days" }
-                        ].map((item) => (
-                            <div key={item.step} className="flex gap-4 items-start">
+                        {content.steps.map((item, idx) => (
+                            <div key={idx} className="flex gap-4 items-start group">
                                 <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 font-semibold">
-                                    {item.step}
+                                    {idx + 1}
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold">{item.title}</h3>
-                                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                                    <h3 className="font-semibold">
+                                        {item.title}
+                                        {isAdmin && (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-6 w-6 p-0 ml-1 opacity-0 group-hover:opacity-100"
+                                                onClick={() => editStep(idx, 'title')}
+                                            >
+                                                <Pencil className="h-3 w-3" />
+                                            </Button>
+                                        )}
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        {item.desc}
+                                        {isAdmin && (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-6 w-6 p-0 ml-1 opacity-0 group-hover:opacity-100"
+                                                onClick={() => editStep(idx, 'desc')}
+                                            >
+                                                <Pencil className="h-3 w-3" />
+                                            </Button>
+                                        )}
+                                    </p>
                                 </div>
                             </div>
                         ))}
@@ -106,10 +300,21 @@ export default function ReturnsPage() {
                 <div className="bg-muted/50 rounded-lg p-6 mb-8">
                     <h2 className="text-lg font-semibold mb-4">Refund Information</h2>
                     <ul className="space-y-2 text-sm text-muted-foreground">
-                        <li>• Refunds are credited to your original payment method</li>
-                        <li>• Bank transfers may take 3-5 additional business days</li>
-                        <li>• Shipping charges are non-refundable unless item was defective</li>
-                        <li>• For COD orders, refund is processed via bank transfer</li>
+                        {content.refundInfo.map((item, idx) => (
+                            <li key={idx} className="group">
+                                • {item}
+                                {isAdmin && (
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 w-6 p-0 ml-1 opacity-0 group-hover:opacity-100"
+                                        onClick={() => editListItem('refundInfo', idx)}
+                                    >
+                                        <Pencil className="h-3 w-3" />
+                                    </Button>
+                                )}
+                            </li>
+                        ))}
                     </ul>
                 </div>
 

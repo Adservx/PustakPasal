@@ -120,7 +120,12 @@ export async function deleteBook(id: string) {
     if (profile?.role !== 'admin') throw new Error('Unauthorized')
 
     await supabase.from('books').delete().eq('id', id)
+    
+    // Revalidate all pages that display books
     revalidatePath('/admin')
+    revalidatePath('/')
+    revalidatePath('/books')
+    revalidatePath(`/books/${id}`)
 }
 
 async function uploadCapturedImage(supabase: Awaited<ReturnType<typeof createClient>>, imageDataUrl: string): Promise<string> {
@@ -208,7 +213,10 @@ export async function createBook(formData: FormData) {
         throw new Error('Failed to create book')
     }
 
+    // Revalidate all pages that display books
     revalidatePath('/admin')
+    revalidatePath('/')
+    revalidatePath('/books')
     redirect('/admin')
 }
 
@@ -263,7 +271,10 @@ export async function updateBook(id: string, formData: FormData) {
         throw new Error('Failed to update book')
     }
 
+    // Revalidate all pages that display books
     revalidatePath('/admin')
+    revalidatePath('/')
+    revalidatePath('/books')
     revalidatePath(`/books/${id}`)
     return { success: true }
 }
